@@ -441,23 +441,22 @@
      garde ainsi la meme taille relative sur telephone et sur grand ecran. */
   container-type: size;
   background-color: #1a1240;
-  background-image:
-    linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.035) 25%,
-      transparent 25%,
-      transparent 75%,
-      rgba(255, 255, 255, 0.035) 75%
-    ),
-    linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.035) 25%,
-      transparent 25%,
-      transparent 75%,
-      rgba(255, 255, 255, 0.035) 75%
-    );
-  background-size: calc(200% / var(--cp-cols)) calc(200% / var(--cp-rows));
-  background-position: 0 0, calc(100% / var(--cp-cols)) calc(100% / var(--cp-rows));
+  /*
+   * Une alveole creusee par case, plutot qu'un damier en diagonale. Le damier
+   * donnait un repere spatial mais ne montrait pas les cases : pendant une
+   * cascade, un trou dans la grille etait indiscernable d'un fond sombre. Une
+   * alveole se voit vide, ce qui rend la chute lisible.
+   *
+   * Une seule couche de peinture, et la taille est calee sur la grille : elle
+   * suit automatiquement un plateau qui n'aurait pas huit colonnes.
+   */
+  background-image: radial-gradient(
+    circle at 50% 47%,
+    rgba(0, 0, 0, 0.38) 0 28%,
+    rgba(255, 255, 255, 0.05) 40%,
+    transparent 60%
+  );
+  background-size: calc(100% / var(--cp-cols)) calc(100% / var(--cp-rows));
   box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55);
 }
 
@@ -546,13 +545,24 @@
   mix-blend-mode: multiply;
 }
 
-.cp-bonbon__marque {
-  font-size: 42px;
-  font-weight: 900;
+/* Les rayures du bonbon special : claires et franches, elles doivent se lire
+   par-dessus n'importe quelle teinte de bonbon. */
+.cp-bonbon__rayures rect {
+  fill: rgba(255, 255, 255, 0.82);
+}
+
+.cp-bonbon__emballage rect {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 6;
+}
+
+.cp-bonbon__meta circle {
+  fill: #1b1330;
+}
+
+.cp-bonbon__etincelles circle {
   fill: #fff;
-  paint-order: stroke;
-  stroke: rgba(0, 0, 0, 0.4);
-  stroke-width: 6px;
 }
 
 .cp-tile--selected .cp-tile__face {

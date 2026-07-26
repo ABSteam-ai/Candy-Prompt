@@ -108,9 +108,23 @@ node --experimental-strip-types tests/demo.e2e.ts      # montage et partie, mobi
 Deux outils de travail visuel :
 
 ```bash
-node --experimental-strip-types tests/apercu.ts     # 45 captures : 9 écrans × 5 tailles
-RALENTI=4 node --experimental-strip-types tests/perf.ts   # fluidité, processeur bridé
+node --experimental-strip-types tests/apercu.ts        # 45 captures : 9 écrans × 5 tailles
+node --experimental-strip-types tests/lisibilite.ts   # confusion entre bonbons
+RALENTI=4 node --experimental-strip-types tests/perf.ts    # fluidité, processeur bridé
 ```
+
+`lisibilite.ts` mesure les deux canaux qui distinguent un bonbon d'un autre, la
+forme et la couleur, et les mesure séparément — un bonbon doit rester
+identifiable si l'un des deux tombe. Il rastérise chaque silhouette à 34 px et
+compare les 21 couples par intersection sur union, puis simule la deutéranopie
+et la protanopie et compare les couleurs en CIEDE2000. Un couple n'est en échec
+que s'il est proche **sur les deux axes à la fois**.
+
+C'est cette mesure qui a imposé deux formes : le Contexte est un bonbon **troué**
+et le Format porte un **coin chanfreiné**. Un disque plein partageait 85 % de son
+empreinte avec le trilobe du Raisonnement, pour un ΔE de 6 en protanopie — deux
+bonbons réellement confondables. La topologie règle ce que la couleur ne peut
+pas régler.
 
 `apercu.ts` signale au passage les deux défauts qu'une capture isolée ne montre
 pas : le débordement horizontal, et le plateau qui sort de la zone visible.

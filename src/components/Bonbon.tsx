@@ -11,8 +11,10 @@ import type { BlockId, SpecialKind } from '../game/types'
  * 1. Chaque bloc a sa propre SILHOUETTE, pas seulement sa couleur. C'est ce
  *    qui rend un plateau lisible d'un coup d'oeil, et c'est ce qui permet de
  *    jouer sans distinguer les couleurs. Les sept formes doivent rester
- *    reconnaissables en noir, sans aucune couleur : etoile, cercle, losange,
- *    gelule, trilobe, carre, papillote.
+ *    reconnaissables en noir, sans aucune couleur : etoile, anneau, losange,
+ *    gelule, trilobe, carre chanfreine, papillote. Le recouvrement de chaque
+ *    couple est mesure par `tests/lisibilite.ts`, couleur simulee en
+ *    deuteranopie et en protanopie comprise.
  * 2. Le volume vient de trois couches superposees, pas d'un degrade : une base
  *    en degrade, un reflet speculaire en haut a gauche, et une ombre interne en
  *    bas. Un simple degrade a deux arrets lit comme un carre colore, jamais
@@ -23,7 +25,7 @@ import type { BlockId, SpecialKind } from '../game/types'
  * le DOM pour rien.
  */
 
-export type Silhouette = 'etoile' | 'cercle' | 'losange' | 'gelule' | 'trilobe' | 'carre' | 'papillote'
+export type Silhouette = 'etoile' | 'anneau' | 'losange' | 'gelule' | 'trilobe' | 'chanfrein' | 'papillote'
 
 /** Prefixe des identifiants SVG, pour ne pas collisionner avec la page hote. */
 const ID = 'cpb'
@@ -76,6 +78,21 @@ export const BonbonDefs = memo(function BonbonDefs() {
   )
 })
 
+/**
+ * Anneau : un bonbon troue. Le trou central n'est pas decoratif — c'est le
+ * seul moyen mesure de separer cette silhouette du trilobe, avec qui un
+ * disque plein partageait 85 % de son empreinte tout en etant a un ΔE de 6
+ * en protanopie. Une topologie differente resiste la ou la couleur echoue.
+ */
+const ANNEAU = 'M9,50 a41,41 0 1,0 82,0 a41,41 0 1,0 -82,0 Z M31,50 a19,19 0 1,0 38,0 a19,19 0 1,0 -38,0 Z'
+
+/**
+ * Carre chanfreine : le coin haut-gauche est coupe net. C'est la seule
+ * silhouette asymetrique du jeu, ce qui la rend reconnaissable meme reduite,
+ * et ce qui la separe du losange et de l'anneau.
+ */
+const CHANFREIN = 'M34,13 H74 a13,13 0 0 1 13,13 V74 a13,13 0 0 1 -13,13 H26 a13,13 0 0 1 -13,-13 V34 Z'
+
 /** Étoile a cinq branches, arrondie par un contour epais. */
 const ETOILE = '50,12 59.4,37.1 86.1,38.3 65.2,54.9 72.3,80.7 50,66 27.7,80.7 34.8,54.9 13.9,38.3 40.6,37.1'
 /** Losange haut, arrondi par un contour epais. */
@@ -95,14 +112,14 @@ function Forme({ silhouette, fill, stroke }: FormeProps) {
   const rond = { fill, stroke, strokeWidth: 11, strokeLinejoin: 'round' as const }
 
   switch (silhouette) {
-    case 'cercle':
-      return <circle cx="50" cy="50" r="41" fill={fill} />
+    case 'anneau':
+      return <path d={ANNEAU} fill={fill} fillRule="evenodd" />
     case 'etoile':
       return <polygon points={ETOILE} {...rond} />
     case 'losange':
       return <polygon points={LOSANGE} {...rond} />
-    case 'carre':
-      return <rect x="13" y="13" width="74" height="74" rx="21" fill={fill} />
+    case 'chanfrein':
+      return <path d={CHANFREIN} fill={fill} />
     case 'gelule':
       return (
         <>
@@ -135,11 +152,59 @@ function Forme({ silhouette, fill, stroke }: FormeProps) {
   }
 }
 
-const SPECIAL_MARK: Record<SpecialKind, string> = {
-  'precision-row': '↔',
-  'precision-col': '↕',
-  iteration: '✳',
-  meta: '★',
+/**
+ * L'habillage des bonbons speciaux.
+ *
+ * Des rayures, pas un symbole ecrit. C'est la grammaire du genre : un bonbon
+ * raye horizontalement nettoie une ligne, raye verticalement une colonne, et
+ * l'orientation des rayures dit l'effet sans qu'on ait a lire. Un glyphe
+ * « ↔ » demande une traduction mentale ; une rayure, non.
+ *
+ * Tout est decoupe sur la silhouette du bonbon par le meme masque que les
+ * reflets, pour que l'habillage epouse la forme au lieu de la recouvrir.
+ */
+function Habillage({ special }: { special: SpecialKind }) {
+  switch (special) {
+    case 'precision-row':
+      return (
+        <g className="cp-bonbon__rayures">
+          {[30, 50, 70].map((y) => (
+            <rect key={y} x="0" y={y - 6} width="100" height="12" />
+          ))}
+        </g>
+      )
+    case 'precision-col':
+      return (
+        <g className="cp-bonbon__rayures">
+          {[30, 50, 70].map((x) => (
+            <rect key={x} x={x - 6} y="0" width="12" height="100" />
+          ))}
+        </g>
+      )
+    case 'iteration':
+      // Le bonbon « emballe » : un double liseré clair, comme un papier serre.
+      return (
+        <g className="cp-bonbon__emballage">
+          <rect x="17" y="17" width="66" height="66" rx="16" />
+          <rect x="28" y="28" width="44" height="44" rx="11" />
+        </g>
+      )
+    case 'meta':
+      // Le Meta-Prompt efface tout un bloc : on lui donne un coeur sombre
+      // constelle, qui ne ressemble a aucun autre bonbon du plateau.
+      return (
+        <g className="cp-bonbon__meta">
+          <circle cx="50" cy="50" r="27" />
+          <g className="cp-bonbon__etincelles">
+            <circle cx="50" cy="34" r="4" />
+            <circle cx="63" cy="57" r="3.4" />
+            <circle cx="37" cy="57" r="3.4" />
+          </g>
+        </g>
+      )
+    default:
+      return null
+  }
 }
 
 interface BonbonProps {
@@ -181,7 +246,14 @@ export const Bonbon = memo(function Bonbon({ block, special, dead }: BonbonProps
         <Forme silhouette={def.silhouette} fill="none" stroke={def.shade} />
       </g>
 
-      {/* 3 et 4. les reflets, decoupes sur la silhouette pour ne pas deborder */}
+      {/* 3. l'habillage du bonbon special, decoupe lui aussi sur la silhouette */}
+      {special ? (
+        <g clipPath={`url(#${clip(def.silhouette)})`}>
+          <Habillage special={special} />
+        </g>
+      ) : null}
+
+      {/* 4 et 5. les reflets, decoupes sur la silhouette pour ne pas deborder */}
       <g clipPath={`url(#${clip(def.silhouette)})`}>
         {/* le grand reflet doux, qui donne le verni */}
         <ellipse cx="38" cy="31" rx="26" ry="18" transform="rotate(-27 38 31)" fill={`url(#${shine})`} />
@@ -190,12 +262,6 @@ export const Bonbon = memo(function Bonbon({ block, special, dead }: BonbonProps
         {/* le rebond de lumiere du bas, qui arrondit la masse */}
         <ellipse cx="56" cy="86" rx="20" ry="7" fill="#fff" opacity="0.14" />
       </g>
-
-      {special ? (
-        <text className="cp-bonbon__marque" x="50" y="50" textAnchor="middle" dominantBaseline="central">
-          {SPECIAL_MARK[special]}
-        </text>
-      ) : null}
     </svg>
   )
 })
