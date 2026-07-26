@@ -58,6 +58,27 @@ export interface Toast {
   tone: 'bonus' | 'info'
 }
 
+/**
+ * Un evenement visuel ephemere, ancre sur une case du plateau.
+ *
+ * Le store ne sait pas comment ces effets sont dessines — gerbe de particules,
+ * nombre qui monte, halo — il se contente de dire ce qui vient de se passer et
+ * ou. La couche d'affichage decide du rendu. Cette separation permet de
+ * retoucher l'habillage visuel sans jamais toucher a la logique de jeu.
+ */
+export interface Effect {
+  id: number
+  kind: 'eclat' | 'score' | 'chaine' | 'voile'
+  row: number
+  col: number
+  block?: BlockId
+  /** Valeur affichee pour les effets qui portent un texte. */
+  value?: string
+}
+
+/** Duree de vie d'un effet, au-dela de laquelle le store l'oublie. */
+const EFFECT_TTL = 1100
+
 interface GameState {
   screen: Screen
   progress: Progress
@@ -75,6 +96,8 @@ interface GameState {
   /** Cases qui viennent de disparaitre, pour l'animation. */
   vanishing: string[]
   toasts: Toast[]
+  /** Effets visuels en cours, ancres sur le plateau. */
+  effects: Effect[]
 
   pendingCards: ChoiceCard[]
   activeCard: ChoiceCard | null
@@ -100,6 +123,7 @@ interface GameState {
 
 let rng: Rng = createRng(1)
 let toastId = 0
+let effectId = 0
 
 function goalsReached(state: {
   level: Level | null
@@ -149,6 +173,24 @@ export const useGame = create<GameState>((set, get) => {
   }
 
   /**
+   * Emet une salve d'effets visuels et programme leur oubli.
+   *
+   * On les retire apres coup plutot que de laisser la couche d'affichage s'en
+   * charger : ainsi un effet ne peut pas rester coince a l'ecran si le
+   * composant qui le dessinait a ete demonte entre-temps.
+   */
+  const emit = (nouveaux: Omit<Effect, 'id'>[]) => {
+    if (nouveaux.length === 0) return
+    const salve = nouveaux.map((effect) => {
+      effectId += 1
+      return { ...effect, id: effectId }
+    })
+    set((s) => ({ effects: [...s.effects, ...salve] }))
+    const ids = new Set(salve.map((e) => e.id))
+    setTimeout(() => set((s) => ({ effects: s.effects.filter((e) => !ids.has(e.id)) })), EFFECT_TTL)
+  }
+
+  /**
    * Deroule les cascades jusqu'a stabilisation du plateau, en marquant les
    * pauses necessaires a l'animation.
    */
@@ -183,6 +225,26 @@ export const useGame = create<GameState>((set, get) => {
       previousBlock = touched ?? previousBlock
 
       if (out.horsSujetCleared > 0) pushToast(`Hors-sujet dégagé`, 'info')
+
+      // Les effets partent avant la disparition : une gerbe qui arrive apres
+      // que le bonbon a disparu ne se rattache visuellement a rien.
+      const veilesLevees = out.cleared.filter((p) => (flou[p.row]?.[p.col] ?? 0) > 0)
+      const centre = out.cleared[Math.floor(out.cleared.length / 2)]
+      emit([
+        ...out.cleared.map((p) => ({
+          kind: 'eclat' as const,
+          row: p.row,
+          col: p.col,
+          block: at(board, p.row, p.col)?.block,
+        })),
+        ...veilesLevees.map((p) => ({ kind: 'voile' as const, row: p.row, col: p.col })),
+        ...(centre
+          ? [{ kind: 'score' as const, row: centre.row, col: centre.col, value: `+${gained}`, block: touched }]
+          : []),
+        ...(centre && chain >= 2
+          ? [{ kind: 'chaine' as const, row: centre.row, col: centre.col, value: `×${chain}` }]
+          : []),
+      ])
 
       // On marque d'abord les tuiles condamnees en les laissant sur le
       // plateau : elles doivent avoir le temps de se retracter a l'ecran.
@@ -297,6 +359,7 @@ export const useGame = create<GameState>((set, get) => {
     busy: false,
     vanishing: [],
     toasts: [],
+    effects: [],
     pendingCards: [],
     activeCard: null,
     cardAnswer: null,
@@ -324,6 +387,7 @@ export const useGame = create<GameState>((set, get) => {
         selected: null,
         busy: false,
         vanishing: [],
+        effects: [],
         pendingCards: [],
         activeCard: null,
         cardAnswer: null,

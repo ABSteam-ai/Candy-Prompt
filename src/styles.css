@@ -186,7 +186,11 @@
   height: 100%;
 }
 
-/* Le voile du Flou est pose sur la case, sous les bonbons. */
+/*
+ * Le voile du Flou, pose sur la case et rendu AU-DESSUS du bonbon.
+ * Il doit se voir sans masquer ce qu'il recouvre : le joueur a besoin de
+ * savoir a la fois ou est le flou et quel bonbon est dessous.
+ */
 .cp-veil {
   position: absolute;
   top: 0;
@@ -194,19 +198,23 @@
   width: calc(100% / var(--cp-cols));
   height: calc(100% / var(--cp-rows));
   transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%));
-  padding: 2px;
+  padding: 3px;
+  pointer-events: none;
 }
 
 .cp-veil__inner {
   width: 100%;
   height: 100%;
-  border-radius: 10px;
+  border-radius: 12px;
+  /* Givre translucide : le bonbon reste identifiable a travers. */
   background: repeating-linear-gradient(
-    45deg,
-    rgba(190, 205, 255, 0.28) 0 5px,
-    rgba(120, 140, 220, 0.16) 5px 10px
-  );
-  box-shadow: inset 0 0 0 2px rgba(200, 215, 255, 0.35);
+      135deg,
+      rgba(214, 228, 255, 0.34) 0 4px,
+      rgba(150, 176, 240, 0.14) 4px 8px
+    ),
+    rgba(198, 214, 255, 0.16);
+  box-shadow: inset 0 0 0 2px rgba(222, 234, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(1.5px);
 }
 
 .cp-tile {

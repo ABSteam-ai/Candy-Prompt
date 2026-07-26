@@ -85,21 +85,6 @@ export function Plateau() {
         }}
       >
         <div className="cp-board__inner">
-          {flou.map((row, r) =>
-            row.map((veil, c) =>
-              veil > 0 ? (
-                <div
-                  key={`veil-${r}-${c}`}
-                  className="cp-veil"
-                  style={{ ['--r' as string]: r, ['--c' as string]: c }}
-                  aria-hidden="true"
-                >
-                  <div className="cp-veil__inner" />
-                </div>
-              ) : null,
-            ),
-          )}
-
           {board.map((row, r) =>
             row.map((cell, c) => {
               if (!cell) return null
@@ -116,6 +101,28 @@ export function Plateau() {
                 />
               )
             }),
+          )}
+
+          {/*
+            Le voile passe APRES les bonbons, donc au-dessus d'eux.
+            Dessine en dessous, il etait integralement masque par la tuile
+            opaque : le joueur ne voyait aucune des cases annoncees comme
+            floues, et l'obstacle etait injouable. Il laisse voir le bonbon
+            a travers, sinon on ne saurait plus quoi aligner.
+          */}
+          {flou.map((row, r) =>
+            row.map((veil, c) =>
+              veil > 0 ? (
+                <div
+                  key={`veil-${r}-${c}`}
+                  className="cp-veil"
+                  style={{ ['--r' as string]: r, ['--c' as string]: c }}
+                  aria-hidden="true"
+                >
+                  <div className="cp-veil__inner" />
+                </div>
+              ) : null,
+            ),
           )}
         </div>
       </div>
