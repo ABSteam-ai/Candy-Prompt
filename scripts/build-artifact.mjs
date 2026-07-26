@@ -48,9 +48,9 @@ const html = `<title>Candy Prompt — apprendre à prompter en jouant</title>
 }
 
 /*
- * La page hote doit avoir une hauteur definie, sinon le `min-height: 100%` de
- * la racine du jeu ne s'applique pas et la partie reste collee en haut, avec
- * du vide en dessous sur un grand ecran.
+ * La page hote doit avoir une hauteur definie, sinon la regle min-height:100%
+ * de la racine du jeu ne s'applique pas et la partie reste collee en haut,
+ * avec du vide en dessous sur un grand ecran.
  */
 html,
 body {
@@ -72,6 +72,18 @@ ${safe(css)}
 ${safe(js)}
 </script>
 `
+
+/*
+ * Garde-fou. Le gabarit ci-dessus est une chaine JavaScript : un accent grave
+ * egare dans un commentaire CSS la referme au milieu, et le fichier produit
+ * sort tronque sans que rien ne le signale. On verifie donc que le script et
+ * la feuille de style sont sortis entiers.
+ */
+if (!html.includes(js.slice(-80))) throw new Error('Le script est sorti tronque du gabarit')
+if (!html.includes(css.slice(-80))) throw new Error('La feuille de style est sortie tronquee du gabarit')
+// On ne compte pas les balises : le bundle minifie contient lui-meme la
+// chaine « <script », le comptage ne prouverait rien.
+if (!html.trimEnd().endsWith('</script>')) throw new Error('Le gabarit ne se termine pas par la fermeture du script')
 
 await writeFile(OUT, html, 'utf8')
 const kb = (n) => `${Math.round(n / 1024)} Ko`
