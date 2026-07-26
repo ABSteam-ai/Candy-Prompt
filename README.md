@@ -15,10 +15,17 @@ Le concept complet et les partis pris de conception sont dans [`CONCEPT.md`](./C
 
 ```bash
 npm install
-npm run dev        # harnais de développement, http://localhost:5173
-npm run build      # typecheck + build de production
-npm test           # 32 tests du moteur et du contenu
+npm run dev          # harnais de développement, http://localhost:5173
+npm run build        # typecheck + build de production
+npm run build:demo   # démo en un seul fichier HTML, à partager telle quelle
+npm test             # 32 tests du moteur et du contenu
 ```
+
+`build:demo` produit `dist-demo/candy-prompt.html` : le jeu entier — styles et
+script compris — dans un fichier unique qui ne charge aucune ressource externe.
+C'est ce fichier qu'on publie en page autonome. Il utilise `src/demo.tsx` comme
+point d'entrée, volontairement dépourvu des accroches de test présentes dans le
+harnais de développement.
 
 ## Intégrer le jeu dans une application
 
@@ -93,6 +100,9 @@ Elles pilotent un vrai navigateur et jouent une vraie partie.
 npm run build && npm run preview       # dans un terminal
 node --experimental-strip-types tests/partie.e2e.ts    # joue le niveau 1 en entier
 node --experimental-strip-types tests/ecrans.e2e.ts    # Grimoire et les 4 niveaux boss
+
+npm run build:demo                                     # puis, sur le fichier unique :
+node --experimental-strip-types tests/demo.e2e.ts      # montage et partie, mobile et desktop
 ```
 
 `partie.e2e.ts` lit le plateau dans le DOM, calcule ses coups avec le moteur du
