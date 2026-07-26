@@ -105,6 +105,20 @@ npm run build:demo                                     # puis, sur le fichier un
 node --experimental-strip-types tests/demo.e2e.ts      # montage et partie, mobile et desktop
 ```
 
+Deux outils de travail visuel :
+
+```bash
+node --experimental-strip-types tests/apercu.ts     # 45 captures : 9 écrans × 5 tailles
+RALENTI=4 node --experimental-strip-types tests/perf.ts   # fluidité, processeur bridé
+```
+
+`apercu.ts` signale au passage les deux défauts qu'une capture isolée ne montre
+pas : le débordement horizontal, et le plateau qui sort de la zone visible.
+
+`perf.ts` bride le processeur pour simuler un téléphone milieu de gamme et
+mesure les intervalles entre images pendant six cascades. Référence actuelle à
+`RALENTI=4` : 60 images par seconde en médiane et au 90e centile.
+
 `partie.e2e.ts` lit le plateau dans le DOM, calcule ses coups avec le moteur du
 jeu, effectue les glissements à la souris, répond aux cartes, et vérifie qu'on
 atteint l'écran de bilan avec un prompt complet. C'est ce test qui a révélé que
