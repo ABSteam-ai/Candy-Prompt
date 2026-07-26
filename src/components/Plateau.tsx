@@ -1,15 +1,10 @@
 import { useRef } from 'react'
 
+import { Bonbon } from './Bonbon'
+import { Effets } from './Effets'
 import { BLOCK_BY_ID } from '../game/blocks'
 import type { Position, SpecialKind, Tile } from '../game/types'
 import { useGame } from '../store/gameStore'
-
-const SPECIAL_BADGE: Record<SpecialKind, string> = {
-  'precision-row': '↔',
-  'precision-col': '↕',
-  iteration: '✳',
-  meta: '★',
-}
 
 const SPECIAL_TITLE: Record<SpecialKind, string> = {
   'precision-row': 'Précision : nettoie la ligne',
@@ -30,6 +25,8 @@ export function Plateau() {
   const tapCell = useGame((s) => s.tapCell)
   const swapCells = useGame((s) => s.swapCells)
   const hint = useGame((s) => s.hint)
+  // Une annonce de cascade en cours vaut secousse du plateau.
+  const secousse = useGame((s) => s.effects.some((e) => e.kind === 'chaine'))
 
   const drag = useRef<{ pos: Position; x: number; y: number; done: boolean } | null>(null)
 
@@ -77,7 +74,7 @@ export function Plateau() {
   return (
     <div className="cp-boardwrap">
       <div
-        className="cp-board"
+        className={`cp-board${secousse ? ' cp-board--secousse' : ''}`}
         style={{ ['--cp-cols' as string]: cols, ['--cp-rows' as string]: rows }}
         onPointerMove={onPointerMove}
         onPointerCancel={() => {
@@ -128,6 +125,10 @@ export function Plateau() {
               ) : null,
             ),
           )}
+
+          {/* Les effets partagent le repere du plateau : une gerbe doit partir
+              exactement du centre de la case ou le bonbon a disparu. */}
+          <Effets />
         </div>
       </div>
 
@@ -189,19 +190,16 @@ function TileView({ tile, row, col, selected, vanishing, hinted, onPointerDown, 
       tabIndex={-1}
       aria-label={label}
     >
+      {/*
+        Plus de libelle texte sur la tuile : a 40 px il se coupait
+        (« CONTEXT », « HORS-SU ») et il empechait le bonbon de lire comme un
+        objet. L'identite du bloc passe desormais par la silhouette et la
+        couleur, comme dans un match-3 classique ; le nom reste partout
+        ailleurs — jauges, brief, cartes de choix — et dans l'etiquette
+        d'accessibilite de la tuile.
+      */}
       <div className="cp-tile__face">
-        {tile.horsSujet ? (
-          <>
-            <span className="cp-tile__icon">🚫</span>
-            <span className="cp-tile__label">Hors-sujet</span>
-          </>
-        ) : (
-          <>
-            <span className="cp-tile__icon">{def.icon}</span>
-            <span className="cp-tile__label">{def.short}</span>
-            {tile.special ? <span className="cp-tile__badge">{SPECIAL_BADGE[tile.special]}</span> : null}
-          </>
-        )}
+        <Bonbon block={tile.block} special={tile.special} dead={tile.horsSujet} />
       </div>
     </div>
   )

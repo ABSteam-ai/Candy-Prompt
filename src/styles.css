@@ -35,7 +35,9 @@
    */
   container-type: inline-size;
   container-name: cp-jeu;
-  background: radial-gradient(circle at 50% 0%, #241a56 0%, var(--cp-bg) 45%, var(--cp-bg-deep) 100%);
+  position: relative;
+  isolation: isolate;
+  background: var(--cp-bg-deep);
   color: var(--cp-text);
   font-family: ui-rounded, 'Segoe UI Rounded', 'Nunito', system-ui, -apple-system, sans-serif;
   font-size: 16px;
@@ -67,6 +69,86 @@
   border: none;
   background: none;
   cursor: pointer;
+}
+
+/* --------------------------------------------------------------- arriere-plan */
+/*
+ * `--cp-teinte` fait pivoter l'ambiance d'un acte a l'autre : la progression se
+ * voit ainsi dans la lumiere de la piece, sans changer une seule couleur de
+ * bonbon. Elle est posee par un attribut sur la racine.
+ */
+.cp-root {
+  --cp-teinte: 0deg;
+}
+
+.cp-root[data-acte='2'] {
+  --cp-teinte: -34deg;
+}
+
+.cp-root[data-acte='3'] {
+  --cp-teinte: 42deg;
+}
+
+.cp-fond {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  filter: hue-rotate(var(--cp-teinte));
+}
+
+.cp-fond > * {
+  position: absolute;
+  inset: -12%;
+}
+
+/*
+ * Les taches de couleur. Aucune n'est nette : ce sont des degrades radiaux qui
+ * s'eteignent, ce qui donne la profondeur d'un fond hors mise au point sans
+ * jamais coûter un flou a calculer.
+ */
+.cp-fond__bokeh {
+  background:
+    radial-gradient(38% 26% at 50% -6%, rgba(255, 210, 130, 0.2), transparent 70%),
+    radial-gradient(22% 16% at 12% 16%, rgba(255, 122, 176, 0.28), transparent 70%),
+    radial-gradient(18% 14% at 88% 24%, rgba(96, 208, 240, 0.24), transparent 70%),
+    radial-gradient(26% 18% at 78% 76%, rgba(170, 128, 255, 0.26), transparent 70%),
+    radial-gradient(20% 15% at 20% 84%, rgba(120, 226, 160, 0.2), transparent 70%),
+    radial-gradient(14% 11% at 60% 40%, rgba(255, 176, 96, 0.16), transparent 70%),
+    linear-gradient(172deg, #2c1b57 0%, #1d1240 46%, #120a29 100%);
+}
+
+/* Une seconde nappe qui derive lentement : le fond respire. */
+.cp-fond__derive {
+  background:
+    radial-gradient(16% 12% at 30% 30%, rgba(255, 190, 220, 0.16), transparent 70%),
+    radial-gradient(20% 15% at 70% 62%, rgba(140, 220, 255, 0.14), transparent 70%),
+    radial-gradient(12% 9% at 46% 82%, rgba(255, 226, 150, 0.14), transparent 70%);
+  animation: cp-derive 44s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes cp-derive {
+  from { transform: translate3d(-3%, -2%, 0) scale(1.04); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.1); }
+}
+
+/*
+ * La vignette. C'est elle qui fait tenir tout le reste : sans assombrissement
+ * des bords, un fond colore entre en concurrence avec le plateau et le jeu
+ * devient fatigant.
+ */
+.cp-fond__vignette {
+  background:
+    radial-gradient(120% 90% at 50% 34%, transparent 34%, rgba(8, 4, 22, 0.62) 100%),
+    linear-gradient(180deg, transparent 60%, rgba(8, 4, 22, 0.5) 100%);
+}
+
+/* Tout le contenu du jeu passe au-dessus du fond. */
+.cp-root > *:not(.cp-fond) {
+  position: relative;
+  z-index: 1;
 }
 
 /* ------------------------------------------------------------------ boutons */
@@ -134,12 +216,37 @@
   color: var(--cp-text-dim);
 }
 
+/*
+ * Les compteurs sont des objets poses sur le decor, pas du texte flottant.
+ * Sur un fond colore, un simple aplat sombre disparait : il faut un liseré
+ * clair en haut, une ombre en bas, et une ombre portee pour les detacher.
+ */
 .cp-stat {
-  min-width: 74px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  background: var(--cp-panel);
+  min-width: 78px;
+  padding: 7px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(84, 62, 156, 0.96), rgba(40, 27, 88, 0.96));
+  box-shadow: inset 0 1.5px 0 rgba(198, 178, 255, 0.55), inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.45);
   text-align: center;
+}
+
+.cp-stat--action {
+  transition: transform 120ms ease;
+}
+
+.cp-stat--action:active {
+  transform: translateY(2px);
+}
+
+/* Quand les coups s'epuisent, le compteur doit battre. */
+.cp-stat--alert {
+  animation: cp-alerte 1s ease-in-out infinite;
+}
+
+@keyframes cp-alerte {
+  0%, 100% { box-shadow: inset 0 1.5px 0 rgba(198, 178, 255, 0.55), 0 4px 12px rgba(0, 0, 0, 0.45); }
+  50% { box-shadow: inset 0 1.5px 0 rgba(255, 200, 210, 0.8), 0 0 16px rgba(255, 122, 138, 0.75); }
 }
 
 .cp-stat__label {
@@ -180,11 +287,14 @@
     'hud'
     'board'
     'aside';
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto;
   gap: 12px;
   width: 100%;
   max-width: 560px;
   margin: 0 auto;
+  /* En etroit le plateau est limite par la largeur : le reste de la hauteur se
+     repartit au-dessus et en dessous plutot que de s'accumuler en bas. */
+  align-content: center;
 }
 
 .cp-play__hud {
@@ -274,10 +384,17 @@
   position: relative;
   width: 100%;
   aspect-ratio: var(--cp-cols) / var(--cp-rows);
-  padding: 6px;
-  border-radius: var(--cp-radius);
-  background: linear-gradient(180deg, #1b1442, #191039);
-  box-shadow: inset 0 0 0 2px var(--cp-line), 0 12px 30px rgba(0, 0, 0, 0.35);
+  padding: 9px;
+  border-radius: 22px;
+  /*
+   * Le plateau est un objet pose, pas un rectangle de fond. Le cadre a une
+   * face haute claire et une face basse sombre, l'interieur est creuse par une
+   * ombre portee interne : c'est ce relief qui fait lire le plateau comme un
+   * plateau et non comme une zone de la page.
+   */
+  background: linear-gradient(180deg, #4a3688 0%, #35266b 42%, #241a4e 100%);
+  box-shadow: inset 0 2px 0 rgba(190, 170, 255, 0.5), inset 0 -3px 0 rgba(0, 0, 0, 0.5),
+    0 10px 0 rgba(0, 0, 0, 0.22), 0 20px 44px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   /*
    * Le plateau doit garder la main sur le geste de glissement.
@@ -290,10 +407,52 @@
   -webkit-user-select: none;
 }
 
+/*
+ * La surface de jeu, creusee dans le cadre. Le damier tres discret sert de
+ * repere spatial : sans lui, l'oeil perd les colonnes pendant une cascade.
+ */
+/* La secousse ponctue les grosses cascades. Discrete : trois pixels suffisent. */
+.cp-board--secousse {
+  animation: cp-secousse 340ms ease-out;
+}
+
+@keyframes cp-secousse {
+  0% { transform: translate3d(0, 0, 0); }
+  18% { transform: translate3d(-3px, 2px, 0); }
+  38% { transform: translate3d(3px, -2px, 0); }
+  58% { transform: translate3d(-2px, -1px, 0); }
+  78% { transform: translate3d(2px, 1px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
 .cp-board__inner {
   position: relative;
   width: 100%;
   height: 100%;
+  border-radius: 14px;
+  /* Conteneur de reference : les tailles de texte des effets sont exprimees en
+     `cqw`, donc relatives au plateau et non a la fenetre. Un score flottant
+     garde ainsi la meme taille relative sur telephone et sur grand ecran. */
+  container-type: size;
+  background-color: #1a1240;
+  background-image:
+    linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.035) 25%,
+      transparent 25%,
+      transparent 75%,
+      rgba(255, 255, 255, 0.035) 75%
+    ),
+    linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.035) 25%,
+      transparent 25%,
+      transparent 75%,
+      rgba(255, 255, 255, 0.035) 75%
+    );
+  background-size: calc(200% / var(--cp-cols)) calc(200% / var(--cp-rows));
+  background-position: 0 0, calc(100% / var(--cp-cols)) calc(100% / var(--cp-rows));
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55);
 }
 
 /*
@@ -316,15 +475,18 @@
   width: 100%;
   height: 100%;
   border-radius: 12px;
-  /* Givre translucide : le bonbon reste identifiable a travers. */
+  /*
+   * Givre leger. Il doit signaler la case sans effacer la silhouette du
+   * bonbon : le joueur a besoin de savoir quoi aligner meme sous le voile.
+   * D'ou un liseré marque et un remplissage tres faible.
+   */
   background: repeating-linear-gradient(
       135deg,
-      rgba(214, 228, 255, 0.34) 0 4px,
-      rgba(150, 176, 240, 0.14) 4px 8px
+      rgba(222, 236, 255, 0.2) 0 3px,
+      rgba(150, 176, 240, 0.06) 3px 7px
     ),
-    rgba(198, 214, 255, 0.16);
-  box-shadow: inset 0 0 0 2px rgba(222, 234, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(1.5px);
+    rgba(198, 214, 255, 0.07);
+  box-shadow: inset 0 0 0 2.5px rgba(226, 238, 255, 0.72), inset 0 0 12px rgba(190, 214, 255, 0.4);
 }
 
 .cp-tile {
@@ -344,44 +506,52 @@
   pointer-events: none;
 }
 
+/*
+ * La face ne porte plus de couleur : c'est le bonbon SVG qui la porte.
+ * Elle ne sert plus qu'a poser l'ombre au sol et a animer l'echelle.
+ */
 .cp-tile__face {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(165deg, var(--tile-color) 0%, var(--tile-color) 52%, var(--tile-shade) 100%);
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.18),
-    0 2px 4px rgba(0, 0, 0, 0.3);
-  transition: transform 140ms ease, box-shadow 140ms ease, opacity 190ms ease;
+  transition: transform 140ms ease, filter 140ms ease, opacity 190ms ease;
+  /* L'ombre portee detache le bonbon du plateau : sans elle, il flotte. */
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
 }
 
-.cp-tile__icon {
-  font-size: clamp(15px, 5.2vw, 24px);
-  line-height: 1;
+/* Le SVG des degrades ne doit jamais occuper de place. */
+.cp-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
-.cp-tile__label {
-  /* Le libelle doit tenir dans la tuile sans jamais deborder : sur un
-     plateau 8x8 en portrait, une case fait une quarantaine de pixels. */
-  max-width: 100%;
-  padding: 0 2px;
-  overflow: hidden;
-  white-space: nowrap;
-  font-size: clamp(5px, 1.75vw, 8px);
-  font-weight: 800;
-  text-transform: uppercase;
-  color: rgba(28, 16, 0, 0.78);
+.cp-bonbon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Le liseré de l'ombre interne ne doit pas manger la forme. */
+.cp-bonbon__creux {
+  mix-blend-mode: multiply;
+}
+
+.cp-bonbon__marque {
+  font-size: 42px;
+  font-weight: 900;
+  fill: #fff;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 6px;
 }
 
 .cp-tile--selected .cp-tile__face {
-  transform: scale(1.12);
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 0 0 3px #fff, 0 0 16px rgba(255, 255, 255, 0.5);
+  transform: scale(1.16);
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.9)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
 }
 
 /*
@@ -403,29 +573,157 @@
   opacity: 0;
 }
 
-.cp-tile--dead .cp-tile__face {
-  background: repeating-linear-gradient(135deg, #4a4a5c 0 6px, #3a3a49 6px 12px);
-  box-shadow: inset 0 0 0 2px #5d5d73;
-}
-
-.cp-tile--dead .cp-tile__label {
-  color: rgba(255, 255, 255, 0.65);
-}
-
-/* Tuiles speciales : un halo qui les distingue au premier coup d'oeil. */
+/* Tuiles speciales : un halo chaud, pour les reperer sans lire le symbole. */
 .cp-tile--special .cp-tile__face {
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 0 0 2px #fff8dc, 0 0 14px rgba(255, 220, 120, 0.75);
+  filter: drop-shadow(0 0 8px rgba(255, 214, 120, 0.95)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  animation: cp-halo 1.9s ease-in-out infinite;
 }
 
-.cp-tile__badge {
+@keyframes cp-halo {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 214, 120, 0.7)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
+  50% { filter: drop-shadow(0 0 13px rgba(255, 232, 160, 1)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
+}
+
+/* -------------------------------------------------------------------- effets */
+/*
+ * Tout ce qui suit s'anime uniquement en `transform` et `opacity` : ce sont
+ * les deux seules proprietes que le navigateur composite sans repeindre. Une
+ * cascade peut faire partir vingt bonbons a la fois, chacun avec six eclats —
+ * animer une couleur ou une taille ici ferait tomber le jeu sous les 60 images
+ * par seconde sur un telephone.
+ */
+.cp-effets {
   position: absolute;
-  inset: auto 2px 2px auto;
-  padding: 0 4px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.55);
-  font-size: 9px;
-  font-weight: 800;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.cp-effet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: calc(100% / var(--cp-cols));
+  height: calc(100% / var(--cp-rows));
+  transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%));
+}
+
+/* --- la gerbe d'eclats d'un bonbon qui casse --- */
+/*
+ * La boite animee occupe toute la case, et l'eclat n'est qu'un point dessine
+ * en son centre. C'est indispensable : `translateX` en pourcentage se calcule
+ * sur la taille de l'ELEMENT anime, pas sur celle du parent. Une particule de
+ * 6 px animee de `translateX(58%)` ne parcourait que 3 px — la gerbe existait
+ * dans le DOM mais restait invisible a l'ecran.
+ */
+.cp-particule {
+  position: absolute;
+  inset: 0;
+  animation: cp-projection 440ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--t) both;
+}
+
+/*
+ * L'eclat a un coeur blanc et un halo colore.
+ *
+ * Colorie uniquement a la teinte du bonbon, il devenait invisible : la gerbe
+ * part au moment ou le bonbon est encore la, donc du rose sur du rose. Le
+ * coeur blanc le detache de n'importe quel fond.
+ */
+.cp-particule::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22%;
+  height: 22%;
+  margin: -11% 0 0 -11%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 34%, var(--eclat) 40%, var(--teinte) 100%);
+  box-shadow: 0 0 8px var(--teinte), 0 0 3px rgba(255, 255, 255, 0.9);
+}
+
+@keyframes cp-projection {
+  from {
+    transform: rotate(var(--a)) translateX(0) scale(1.1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  to {
+    transform: rotate(var(--a)) translateX(var(--d)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* L'onde de choc : elle donne la percussion du match. */
+/* L'onde de choc, blanche pour la meme raison que le coeur des eclats. */
+.cp-onde {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 10px var(--teinte);
+  animation: cp-onde 380ms ease-out both;
+}
+
+@keyframes cp-onde {
+  from { transform: scale(0.35); opacity: 0.95; }
+  to { transform: scale(1.9); opacity: 0; }
+}
+
+/* --- le voile qui se leve --- */
+.cp-effet--voile::after {
+  content: '';
+  width: 74%;
+  height: 74%;
+  border-radius: 12px;
+  border: 3px solid #eaf2ff;
+  animation: cp-degivrage 480ms ease-out both;
+}
+
+@keyframes cp-degivrage {
+  from { transform: scale(1); opacity: 0.9; }
+  to { transform: scale(1.5); opacity: 0; }
+}
+
+/* --- le score qui monte --- */
+.cp-effet--score {
+  z-index: 2;
+  font-size: clamp(13px, 3.4cqw, 22px);
+  font-weight: 900;
   color: #fff;
+  white-space: nowrap;
+  text-shadow: 0 0 8px var(--teinte), 0 2px 3px rgba(0, 0, 0, 0.85);
+  animation: cp-montee 950ms cubic-bezier(0.16, 0.9, 0.3, 1) both;
+}
+
+@keyframes cp-montee {
+  0% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)) scale(0.6); opacity: 0; }
+  12% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 10%)) scale(1.22); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 135%)) scale(0.95); opacity: 0; }
+}
+
+/* --- l'annonce de cascade --- */
+.cp-effet--chaine {
+  z-index: 3;
+  font-size: clamp(22px, 6cqw, 46px);
+  font-weight: 900;
+  color: var(--cp-accent);
+  text-shadow: 0 0 14px rgba(255, 209, 102, 0.9), 0 3px 4px rgba(0, 0, 0, 0.8);
+  animation: cp-annonce 900ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes cp-annonce {
+  0% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)) scale(0.3) rotate(-12deg); opacity: 0; }
+  30% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)) scale(1.3) rotate(4deg); opacity: 1; }
+  70% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)) scale(1.1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 40%)) scale(1.1); opacity: 0; }
 }
 
 /* ------------------------------------------------------------------- toasts */
@@ -462,10 +760,11 @@
 
 /* ------------------------------------------------- panneau de construction */
 .cp-panel {
-  padding: 10px 12px;
-  border-radius: var(--cp-radius);
-  background: var(--cp-panel);
-  box-shadow: inset 0 0 0 1px var(--cp-line);
+  padding: 11px 13px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(58, 42, 118, 0.94), rgba(32, 22, 72, 0.94));
+  box-shadow: inset 0 1.5px 0 rgba(190, 168, 255, 0.4), inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
 .cp-panel__title {
@@ -556,9 +855,10 @@
 
 .cp-card {
   padding: 18px;
-  border-radius: 20px;
-  background: var(--cp-panel);
-  box-shadow: inset 0 0 0 1px var(--cp-line), 0 14px 34px rgba(0, 0, 0, 0.35);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(56, 40, 116, 0.95), rgba(30, 21, 70, 0.96));
+  box-shadow: inset 0 2px 0 rgba(190, 168, 255, 0.42), inset 0 -3px 0 rgba(0, 0, 0, 0.4),
+    0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
 .cp-eyebrow {

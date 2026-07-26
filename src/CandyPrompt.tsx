@@ -1,6 +1,8 @@
 import './styles.css'
 
 import { Bilan } from './components/Bilan'
+import { BonbonDefs } from './components/Bonbon'
+import { Fond } from './components/Fond'
 import { Boss } from './components/Boss'
 import { CarteChoix } from './components/CarteChoix'
 import { ActeIntro, Brief, Carte, Grimoire } from './components/Ecrans'
@@ -16,9 +18,15 @@ import { useGame } from './store/gameStore'
  */
 export function CandyPrompt() {
   const screen = useGame((s) => s.screen)
+  const acte = useGame((s) => s.level?.act)
 
   return (
-    <div className="cp-root">
+    // L'acte en cours pivote la teinte de l'arriere-plan : la progression se
+    // voit dans la lumiere de la piece, sans toucher aux couleurs des bonbons.
+    <div className="cp-root" data-acte={acte}>
+      <Fond />
+      {/* Degrades des bonbons : declares une fois, partages par tout le jeu. */}
+      <BonbonDefs />
       {screen === 'carte' ? <Carte /> : null}
       {screen === 'grimoire' ? <Grimoire /> : null}
       {screen === 'acte' ? <ActeIntro /> : null}

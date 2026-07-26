@@ -1,12 +1,20 @@
 import type { BlockId } from './types'
+import type { Silhouette } from '../components/Bonbon'
 
 export interface BlockDef {
   id: BlockId
   label: string
   short: string
   icon: string
+  /**
+   * La forme du bonbon. Sept silhouettes nettement distinctes, pour que le
+   * plateau reste lisible sans compter sur la couleur seule.
+   */
+  silhouette: Silhouette
   /** Couleur principale de la tuile. */
   color: string
+  /** Couleur de la facette haute, cote lumiere. */
+  light: string
   /** Couleur de la facette basse, pour donner du volume au bonbon. */
   shade: string
   /** Ce que le bloc apporte au prompt : le texte de la carte pedagogique. */
@@ -25,7 +33,9 @@ export const BLOCKS: BlockDef[] = [
     label: 'Le Rôle',
     short: 'Rôle',
     icon: '👑',
+    silhouette: 'etoile',
     color: '#f6c445',
+    light: '#ffe9a3',
     shade: '#d69a12',
     role: "Définit l'identité, l'expertise et le ton que l'IA doit adopter pour répondre.",
     piege: "« Sois professionnel » ne définit rien. Un rôle utile nomme un métier, une expérience et un ton.",
@@ -35,7 +45,9 @@ export const BLOCKS: BlockDef[] = [
     label: 'Le Contexte',
     short: 'Contexte',
     icon: '🔍',
+    silhouette: 'cercle',
     color: '#4cc4f0',
+    light: '#b6ecff',
     shade: '#1a89bb',
     role: "Fournit les informations d'arrière-plan et le cadre de la situation pour situer l'IA.",
     piege: "L'IA ne connaît ni ton entreprise, ni ton client, ni ton historique. Ce que tu ne dis pas, elle l'invente.",
@@ -45,7 +57,9 @@ export const BLOCKS: BlockDef[] = [
     label: 'La Demande',
     short: 'Demande',
     icon: '🎯',
+    silhouette: 'losange',
     color: '#ff6b8a',
+    light: '#ffc2ce',
     shade: '#cc2f52',
     role: "Énonce l'objectif central et le but global que tu souhaites atteindre.",
     piege: "« Parle-moi de X » n'est pas une demande, c'est un sujet. Une demande a un but mesurable.",
@@ -55,7 +69,9 @@ export const BLOCKS: BlockDef[] = [
     label: 'Les Tâches',
     short: 'Tâches',
     icon: '📋',
+    silhouette: 'gelule',
     color: '#7ee08a',
+    light: '#c7f5cd',
     shade: '#3d9e50',
     role: 'Découpe le travail en étapes précises et ordonnées à accomplir point par point.',
     piege: "Sans découpage, l'IA traite tout d'un bloc et bâcle les étapes du milieu.",
@@ -65,7 +81,9 @@ export const BLOCKS: BlockDef[] = [
     label: 'Le Raisonnement',
     short: 'Raison.',
     icon: '🧠',
+    silhouette: 'trilobe',
     color: '#b58cff',
+    light: '#e0ccff',
     shade: '#7a4fd1',
     role: "Guide la réflexion de l'IA sur la manière de traiter les informations et de prioriser.",
     piege: "Sans consigne de priorité, l'IA traite tous les éléments comme s'ils avaient le même poids.",
@@ -75,7 +93,9 @@ export const BLOCKS: BlockDef[] = [
     label: 'Le Format',
     short: 'Format',
     icon: '📐',
+    silhouette: 'carre',
     color: '#ff9f5a',
+    light: '#ffd9b8',
     shade: '#d1631d',
     role: 'Détermine la structure visuelle (tableaux, listes, code) et l\'organisation du résultat final.',
     piege: "Si tu ne fixes pas la forme, tu reçois un pavé de texte que tu devras remettre en forme toi-même.",
@@ -85,7 +105,9 @@ export const BLOCKS: BlockDef[] = [
     label: "Les Conditions d'arrêt",
     short: 'Arrêt',
     icon: '✋',
+    silhouette: 'papillote',
     color: '#f27bd0',
+    light: '#fbc7ee',
     shade: '#b7359a',
     role: 'Précise les critères de qualité à respecter pour que la mission soit jugée réussie.',
     piege: "Sans critère de réussite, tu ne peux pas dire si la réponse est bonne. Ni l'IA non plus.",
