@@ -292,6 +292,36 @@ export function isValidSwap(board: Board, a: Position, b: Position): boolean {
   return findMatches(swapped(board, a, b)).length > 0
 }
 
+/**
+ * Cherche un coup a suggerer au joueur qui hesite.
+ *
+ * On privilegie le coup qui detruit le plus de tuiles : un indice qui pointe
+ * un alignement de trois quand un alignement de cinq est disponible juste a
+ * cote donne l'impression d'un mauvais conseil.
+ */
+export function findHint(board: Board): [Position, Position] | null {
+  const rows = board.length
+  const cols = board[0]?.length ?? 0
+  let best: { move: [Position, Position]; size: number } | null = null
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const from = { row: r, col: c }
+      for (const to of [
+        { row: r, col: c + 1 },
+        { row: r + 1, col: c },
+      ]) {
+        if (to.row >= rows || to.col >= cols) continue
+        if (!isValidSwap(board, from, to)) continue
+        const matches = findMatches(swapped(board, from, to), to)
+        const size = matches.reduce((sum, m) => sum + m.positions.length, 0)
+        if (!best || size > best.size) best = { move: [from, to], size }
+      }
+    }
+  }
+  return best?.move ?? null
+}
+
 export function hasPossibleMove(board: Board): boolean {
   const rows = board.length
   const cols = board[0]?.length ?? 0

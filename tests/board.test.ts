@@ -5,6 +5,7 @@ import {
   applyGravity,
   clearMatches,
   createBoard,
+  findHint,
   findMatches,
   hasPossibleMove,
   isValidSwap,
@@ -104,6 +105,52 @@ test('un echange est accepte s il cree un alignement', () => {
 test('une tuile Hors-sujet ne peut pas etre deplacee', () => {
   const board = boardOf(['R.D', 'CRC', 'RDC'])
   assert.equal(isValidSwap(board, { row: 0, col: 1 }, { row: 1, col: 1 }), false)
+})
+
+test('l indice pointe un coup reellement jouable', () => {
+  const board = boardOf(['RCD', 'CRC', 'RDC'])
+  const hint = findHint(board)
+  assert.notEqual(hint, null, 'un coup existe, l indice doit le trouver')
+  assert.equal(isValidSwap(board, hint![0], hint![1]), true)
+})
+
+test('l indice prefere le coup qui detruit le plus de tuiles', () => {
+  //  Deux coups possibles : l un aligne 3 R, l autre en aligne 4.
+  //  colonne 0 : R R C R  -> echanger (2,0) avec (2,1) aligne 4 R
+  //  ligne 3 : D D C D    -> echanger (3,2) avec (2,2) aligne 3 D
+  const board = boardOf(['RTDT', 'RTCT', 'CRDT', 'RDCD'])
+  const hint = findHint(board)
+  assert.notEqual(hint, null)
+  const matches = findMatches(swapped(board, hint![0], hint![1]), hint![1])
+  const taille = matches.reduce((sum, m) => sum + m.positions.length, 0)
+  assert.equal(taille >= 4, true, `l indice ne rapporte que ${taille} tuiles`)
+})
+
+test('l indice et le detecteur de coup sont toujours d accord', () => {
+  // La vraie propriete a garantir : l'indice trouve un coup exactement quand
+  // il en existe un. Si les deux divergent, soit on suggere l'impossible, soit
+  // on rebrasse un plateau encore jouable.
+  const level = LEVELS[9]!
+  for (let seed = 0; seed < 60; seed++) {
+    const rng = createRng(level.seed + seed)
+    let { board } = createBoard(level, rng)
+    // On abime le plateau au fil des coups pour balayer des etats varies,
+    // y compris ceux ou il ne reste presque plus rien a jouer.
+    for (let tour = 0; tour < 6; tour++) {
+      const hint = findHint(board)
+      assert.equal(
+        hint !== null,
+        hasPossibleMove(board),
+        `graine ${seed}, tour ${tour} : l indice et le detecteur divergent`,
+      )
+      if (!hint) break
+      assert.equal(isValidSwap(board, hint[0], hint[1]), true, 'coup suggere invalide')
+
+      const apres = swapped(board, hint[0], hint[1])
+      const out = clearMatches(apres, emptyFlou(apres), findMatches(apres, hint[1]))
+      board = applyGravity(out.board, level.palette ?? level.blocks, rng)
+    }
+  }
 })
 
 test('la destruction recolte un fragment par tuile du bloc', () => {

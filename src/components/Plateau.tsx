@@ -29,12 +29,15 @@ export function Plateau() {
   const toasts = useGame((s) => s.toasts)
   const tapCell = useGame((s) => s.tapCell)
   const swapCells = useGame((s) => s.swapCells)
+  const hint = useGame((s) => s.hint)
 
   const drag = useRef<{ pos: Position; x: number; y: number; done: boolean } | null>(null)
 
   const rows = board.length
   const cols = board[0]?.length ?? 0
   const vanishingSet = new Set(vanishing)
+  // Les deux cases du coup suggere, reperees pour etre mises en avant.
+  const hintSet = new Set(hint?.map((p) => `${p.row},${p.col}`) ?? [])
 
   const onPointerDown = (pos: Position) => (event: React.PointerEvent) => {
     drag.current = { pos, x: event.clientX, y: event.clientY, done: false }
@@ -96,6 +99,7 @@ export function Plateau() {
                   col={c}
                   selected={selected?.row === r && selected?.col === c}
                   vanishing={vanishingSet.has(`${r},${c}`)}
+                  hinted={hintSet.has(`${r},${c}`)}
                   onPointerDown={onPointerDown({ row: r, col: c })}
                   onPointerUp={onPointerUp({ row: r, col: c })}
                 />
@@ -144,17 +148,19 @@ interface TileViewProps {
   col: number
   selected: boolean
   vanishing: boolean
+  hinted: boolean
   onPointerDown: (event: React.PointerEvent) => void
   onPointerUp: () => void
 }
 
-function TileView({ tile, row, col, selected, vanishing, onPointerDown, onPointerUp }: TileViewProps) {
+function TileView({ tile, row, col, selected, vanishing, hinted, onPointerDown, onPointerUp }: TileViewProps) {
   const def = BLOCK_BY_ID[tile.block]
   const classes = ['cp-tile']
   if (selected) classes.push('cp-tile--selected')
   if (vanishing) classes.push('cp-tile--vanishing')
   if (tile.horsSujet) classes.push('cp-tile--dead')
   if (tile.special) classes.push('cp-tile--special')
+  if (hinted) classes.push('cp-tile--hint')
 
   const label = tile.horsSujet
     ? 'Hors-sujet'

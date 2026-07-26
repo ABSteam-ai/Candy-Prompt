@@ -274,6 +274,20 @@
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 0 0 3px #fff, 0 0 16px rgba(255, 255, 255, 0.5);
 }
 
+/*
+ * Coup suggere apres hesitation. Le battement doit attirer l'oeil sans
+ * ressembler a une erreur : on grossit legerement et on eclaircit, sans
+ * changer la couleur du bonbon.
+ */
+.cp-tile--hint .cp-tile__face {
+  animation: cp-battement 1.15s ease-in-out infinite;
+}
+
+@keyframes cp-battement {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.09); filter: brightness(1.22); }
+}
+
 .cp-tile--vanishing .cp-tile__face {
   transform: scale(0.25) rotate(14deg);
   opacity: 0;

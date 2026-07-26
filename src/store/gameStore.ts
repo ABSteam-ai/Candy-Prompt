@@ -5,6 +5,7 @@ import {
   areAdjacent,
   clearMatches,
   createBoard,
+  findHint,
   findMatches,
   hasPossibleMove,
   isSwappable,
@@ -79,6 +80,14 @@ export interface Effect {
 /** Duree de vie d'un effet, au-dela de laquelle le store l'oublie. */
 const EFFECT_TTL = 1100
 
+/**
+ * Delai d'inactivite avant de suggerer un coup.
+ *
+ * Assez long pour ne pas jouer a la place du joueur qui reflechit, assez court
+ * pour rattraper celui qui ne voit plus rien.
+ */
+const HINT_DELAY = 6000
+
 interface GameState {
   screen: Screen
   progress: Progress
@@ -98,6 +107,8 @@ interface GameState {
   toasts: Toast[]
   /** Effets visuels en cours, ancres sur le plateau. */
   effects: Effect[]
+  /** Coup suggere apres un temps d'hesitation, s'il y en a un. */
+  hint: [Position, Position] | null
 
   pendingCards: ChoiceCard[]
   activeCard: ChoiceCard | null
@@ -124,6 +135,7 @@ interface GameState {
 let rng: Rng = createRng(1)
 let toastId = 0
 let effectId = 0
+let hintTimer: ReturnType<typeof setTimeout> | null = null
 
 function goalsReached(state: {
   level: Level | null
@@ -188,6 +200,27 @@ export const useGame = create<GameState>((set, get) => {
     set((s) => ({ effects: [...s.effects, ...salve] }))
     const ids = new Set(salve.map((e) => e.id))
     setTimeout(() => set((s) => ({ effects: s.effects.filter((e) => !ids.has(e.id)) })), EFFECT_TTL)
+  }
+
+  /**
+   * Programme la suggestion d'un coup si le joueur ne joue plus.
+   *
+   * Le minuteur est remis a zero a chaque interaction : on ne veut pas
+   * souffler la reponse a quelqu'un qui est en train de reflechir.
+   */
+  const scheduleHint = () => {
+    if (hintTimer) clearTimeout(hintTimer)
+    hintTimer = setTimeout(() => {
+      const state = get()
+      if (state.screen !== 'jeu' || state.busy || state.activeCard) return
+      set({ hint: findHint(state.board) })
+    }, HINT_DELAY)
+  }
+
+  const cancelHint = () => {
+    if (hintTimer) clearTimeout(hintTimer)
+    hintTimer = null
+    if (get().hint) set({ hint: null })
   }
 
   /**
@@ -284,6 +317,7 @@ export const useGame = create<GameState>((set, get) => {
     }
 
     queueCards()
+    scheduleHint()
   }
 
   /** Ouvre une carte de choix pour chaque bloc dont l'objectif vient d'etre atteint. */
@@ -360,6 +394,7 @@ export const useGame = create<GameState>((set, get) => {
     vanishing: [],
     toasts: [],
     effects: [],
+    hint: null,
     pendingCards: [],
     activeCard: null,
     cardAnswer: null,
@@ -367,7 +402,10 @@ export const useGame = create<GameState>((set, get) => {
     bossQueue: [],
     outcome: null,
 
-    openCarte: () => set({ screen: 'carte', level: null, outcome: null }),
+    openCarte: () => {
+      cancelHint()
+      set({ screen: 'carte', level: null, outcome: null })
+    },
     openGrimoire: () => set({ screen: 'grimoire' }),
 
     startLevel: (levelId) => {
@@ -388,6 +426,7 @@ export const useGame = create<GameState>((set, get) => {
         busy: false,
         vanishing: [],
         effects: [],
+        hint: null,
         pendingCards: [],
         activeCard: null,
         cardAnswer: null,
@@ -411,11 +450,14 @@ export const useGame = create<GameState>((set, get) => {
         return
       }
       set({ screen: 'jeu' })
+      scheduleHint()
     },
 
     tapCell: (pos) => {
       const state = get()
       if (state.busy || state.activeCard || state.screen !== 'jeu') return
+      cancelHint()
+      scheduleHint()
       const cell = at(state.board, pos.row, pos.col)
       if (!isSwappable(cell)) {
         pushToast('Le Hors-sujet ne bouge pas', 'info')
@@ -443,6 +485,7 @@ export const useGame = create<GameState>((set, get) => {
       const state = get()
       if (state.busy || state.activeCard || state.screen !== 'jeu') return
       if (!areAdjacent(from, to)) return
+      cancelHint()
 
       const before = state.board
       if (!isSwappable(at(before, from.row, from.col)) || !isSwappable(at(before, to.row, to.col))) {
