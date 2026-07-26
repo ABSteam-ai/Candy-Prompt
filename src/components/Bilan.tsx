@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { Bonbon } from './Bonbon'
 import { BLOCK_BY_ID } from '../game/blocks'
 import { assemblePrompt, clarityScore, starsFor, useGame } from '../store/gameStore'
 import type { ChoiceQuality } from '../game/types'
@@ -111,7 +112,9 @@ export function Bilan() {
                 style={{ ['--tile-color' as string]: def.color }}
               >
                 <p className="cp-prompt__label">
-                  <span aria-hidden="true">{def.icon}</span>
+                  <span className="cp-prompt__bonbon" aria-hidden="true">
+                    <Bonbon block={block} />
+                  </span>
                   {def.label}
                   <span className="cp-prompt__quality">{QUALITY_LABEL[entry.quality]}</span>
                 </p>

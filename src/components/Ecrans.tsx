@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { Bonbon } from './Bonbon'
 import { BLOCKS, BLOCK_BY_ID } from '../game/blocks'
 import { ACT_INTROS, LEVELS } from '../data/levels'
 import { useGame, unlockedUpTo } from '../store/gameStore'
@@ -15,7 +16,7 @@ export function Carte() {
   const totalStars = Object.values(progress.stars).reduce((a, b) => a + b, 0)
 
   return (
-    <div className="cp-screen" style={{ justifyContent: 'flex-start' }}>
+    <div className="cp-screen cp-screen--large" style={{ justifyContent: 'flex-start' }}>
       <div className="cp-card">
         <p className="cp-eyebrow">La Quête de l'IA</p>
         <h1 style={{ marginTop: 6, fontSize: 27 }}>Candy Prompt</h1>
@@ -23,6 +24,11 @@ export function Carte() {
           Aligne les blocs, construis le prompt. Sept blocs font tenir une demande debout — tu vas les
           apprendre en jouant.
         </p>
+        {/*
+          La legende des sept bonbons. C'est la cle de lecture du plateau :
+          puisque les tuiles ne portent plus de libelle, c'est ici que
+          s'apprend l'association entre une forme et un bloc.
+        */}
         <div className="cp-blocks-legend">
           {BLOCKS.map((block) => (
             <span
@@ -30,7 +36,9 @@ export function Carte() {
               className="cp-chip"
               style={{ ['--tile-color' as string]: block.color }}
             >
-              <span aria-hidden="true">{block.icon}</span>
+              <span className="cp-chip__bonbon" aria-hidden="true">
+                <Bonbon block={block.id} />
+              </span>
               {block.short}
             </span>
           ))}
@@ -96,8 +104,11 @@ export function ActeIntro() {
           const def = BLOCK_BY_ID[blockId]
           return (
             <div key={blockId} className="cp-brief" style={{ borderLeftColor: def.color }}>
-              <p style={{ fontWeight: 800 }}>
-                {def.icon} {def.label}
+              <p className="cp-brief__titre">
+                <span className="cp-brief__bonbon" aria-hidden="true">
+                  <Bonbon block={blockId} />
+                </span>
+                {def.label}
               </p>
               <p style={{ marginTop: 4 }}>{def.role}</p>
               <p className="cp-muted" style={{ marginTop: 8 }}>
@@ -177,7 +188,7 @@ export function Grimoire() {
   const entries = [...progress.grimoire].sort((a, b) => a.levelId - b.levelId)
 
   return (
-    <div className="cp-screen" style={{ justifyContent: 'flex-start' }}>
+    <div className="cp-screen cp-screen--large" style={{ justifyContent: 'flex-start' }}>
       <div className="cp-card">
         <p className="cp-eyebrow">Ta collection</p>
         <h1 style={{ marginTop: 6, fontSize: 24 }}>Le Grimoire</h1>

@@ -335,6 +335,12 @@
 }
 
 @container cp-jeu (min-width: 860px) {
+  /* La carte des niveaux et le Grimoire ont de la matiere a etaler : on leur
+     laisse plus de largeur qu'a un ecran de texte. */
+  .cp-screen--large {
+    max-width: 1000px;
+  }
+
   .cp-play {
     grid-template-areas:
       'hud   hud'
@@ -788,14 +794,56 @@
 
 .cp-gauge {
   display: grid;
-  grid-template-columns: 22px 1fr auto;
+  grid-template-columns: 24px 1fr auto;
   align-items: center;
   gap: 8px;
 }
 
-.cp-gauge__icon {
-  font-size: 15px;
-  text-align: center;
+/* Le bonbon des jauges, de la legende et des titres : meme dessin, tailles
+   differentes. C'est ce rappel constant qui apprend les formes. */
+.cp-gauge__bonbon {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.cp-chip__bonbon {
+  display: block;
+  width: 17px;
+  height: 17px;
+}
+
+.cp-brief__titre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.cp-brief__bonbon {
+  display: block;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+}
+
+.cp-prompt__bonbon {
+  display: block;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+}
+
+.cp-eyebrow--bonbon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-eyebrow__bonbon {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
 .cp-gauge__track {
@@ -1054,24 +1102,31 @@
 /* ------------------------------------------------------------------ carte */
 .cp-levels {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 11px;
 }
 
 .cp-level {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px;
-  border-radius: 14px;
-  background: var(--cp-panel);
-  box-shadow: inset 0 0 0 1px var(--cp-line);
+  gap: 5px;
+  padding: 13px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(64, 46, 132, 0.95), rgba(34, 23, 78, 0.95));
+  box-shadow: inset 0 1.5px 0 rgba(190, 168, 255, 0.42), inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 5px 14px rgba(0, 0, 0, 0.4);
   text-align: left;
-  transition: transform 140ms ease;
+  transition: transform 140ms ease, box-shadow 140ms ease;
 }
 
-.cp-level:active {
-  transform: scale(0.97);
+.cp-level:hover:not(.cp-level--locked) {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1.5px 0 rgba(210, 190, 255, 0.55), 0 9px 20px rgba(0, 0, 0, 0.5);
+}
+
+.cp-level:active:not(.cp-level--locked) {
+  transform: translateY(2px);
+  box-shadow: inset 0 1.5px 0 rgba(190, 168, 255, 0.42), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .cp-level--locked {

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { Bonbon } from './Bonbon'
 import { BLOCK_BY_ID } from '../game/blocks'
 import { stableOrder } from '../game/shuffle'
 import { useGame } from '../store/gameStore'
@@ -22,8 +23,11 @@ export function CarteChoix() {
   return (
     <div className="cp-modal" role="dialog" aria-modal="true" aria-label={`Formuler ${def.label}`}>
       <div className="cp-modal__box">
-        <p className="cp-eyebrow">
-          {def.icon} {def.label} — bloc débloqué
+        <p className="cp-eyebrow cp-eyebrow--bonbon">
+          <span className="cp-eyebrow__bonbon" aria-hidden="true">
+            <Bonbon block={card.block} />
+          </span>
+          {def.label} — bloc débloqué
         </p>
         <h2 style={{ marginTop: 6, fontSize: 19 }}>{card.question}</h2>
         <p className="cp-lead" style={{ fontSize: 13 }}>

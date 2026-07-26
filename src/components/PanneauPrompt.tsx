@@ -1,3 +1,4 @@
+import { Bonbon } from './Bonbon'
 import { BLOCK_BY_ID } from '../game/blocks'
 import { useGame } from '../store/gameStore'
 
@@ -44,8 +45,13 @@ export function PanneauPrompt() {
                 ['--tile-shade' as string]: def.shade,
               }}
             >
-              <span className="cp-gauge__icon" aria-hidden="true">
-                {def.icon}
+              {/*
+                Le bonbon lui-meme, pas un emoji : la tuile ne porte plus de
+                libelle, c'est donc ici que le joueur apprend a associer une
+                forme a un bloc.
+              */}
+              <span className="cp-gauge__bonbon" aria-hidden="true">
+                <Bonbon block={block} />
               </span>
               <div
                 className="cp-gauge__track"
