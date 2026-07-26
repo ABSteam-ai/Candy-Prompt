@@ -52,6 +52,32 @@ function makeTile(block: BlockId): Tile {
   return { id: nextTileId(), block }
 }
 
+/** Les sept blocs, dans l'ordre canonique. Palette par defaut du plateau. */
+const ALL_BLOCKS: BlockId[] = [
+  'role',
+  'contexte',
+  'demande',
+  'taches',
+  'raisonnement',
+  'format',
+  'arret',
+]
+
+/**
+ * Les bonbons a faire apparaitre sur le plateau d'un niveau.
+ *
+ * C'est deliberement independant des blocs du prompt : en dessous de cinq
+ * types, chaque etape de cascade rase la moitie de la grille et un seul coup
+ * suffit a terminer le niveau.
+ */
+export function paletteFor(level: Level): BlockId[] {
+  const palette = level.palette ?? ALL_BLOCKS
+  // Les blocs a objectif doivent toujours pouvoir apparaitre, sinon le niveau
+  // devient infaisable.
+  const missing = level.blocks.filter((b) => !palette.includes(b))
+  return missing.length > 0 ? [...palette, ...missing] : palette
+}
+
 // ---------------------------------------------------------------------------
 // Detection des alignements
 // ---------------------------------------------------------------------------
@@ -176,7 +202,7 @@ export interface InitialBoard {
 export function createBoard(level: Level, rng: Rng): InitialBoard {
   const rows = level.rows ?? DEFAULT_ROWS
   const cols = level.cols ?? DEFAULT_COLS
-  const palette = level.blocks
+  const palette = paletteFor(level)
 
   for (let attempt = 0; attempt < 200; attempt++) {
     const board: Board = Array.from({ length: rows }, () => Array.from({ length: cols }, () => null))
@@ -375,8 +401,16 @@ export function clearMatches(board: Board, flouGrid: FlouGrid, matches: Match[])
     }
 
     // Le Flou se dissipe couche par couche, sous la tuile qui vient de partir.
+    //
+    // Tant qu'une case est voilee, elle ne rapporte aucun fragment : detruire
+    // dessus ne fait que lever le voile. C'est la traduction en jeu de l'idee
+    // qu'un passage flou d'un prompt ne rapporte rien tant qu'il reste flou.
+    // Le Flou coute donc des coups, mais ne peut jamais bloquer un niveau —
+    // contrairement a un objectif « dissiper tout le Flou », qui devient
+    // parfois mecaniquement inatteignable sur les dernieres cases.
     const veil = flou[pos.row]![pos.col]!
-    if (veil > 0) {
+    const veiled = veil > 0
+    if (veiled) {
       flou[pos.row]![pos.col] = veil - 1
       flouCleared += 1
     }
@@ -389,7 +423,7 @@ export function clearMatches(board: Board, flouGrid: FlouGrid, matches: Match[])
       continue
     }
 
-    collected[cell.block] = (collected[cell.block] ?? 0) + 1
+    if (!veiled) collected[cell.block] = (collected[cell.block] ?? 0) + 1
 
     // Le souffle emporte les Hors-sujet orthogonalement adjacents.
     for (const [dr, dc] of [
@@ -443,8 +477,15 @@ export function triggerSpecials(board: Board, positions: Position[]): Match[] {
 
 /**
  * Fait tomber les tuiles et complete le haut du plateau.
+ *
  * Les tuiles gardent leur identifiant : c'est la chute qui est animee, pas un
  * remplacement.
+ *
+ * Les tuiles neuves evitent de former un alignement des leur arrivee. Sans
+ * cette precaution, un plateau a peu de blocs part en reaction en chaine
+ * perpetuelle : le hasard recree un alignement a chaque remplissage, et un
+ * seul coup du joueur suffit alors a vider le niveau. Les cascades qui
+ * restent sont celles qui viennent vraiment de la chute des tuiles.
  */
 export function applyGravity(board: Board, palette: BlockId[], rng: Rng): Board {
   const next = cloneBoard(board)
@@ -462,10 +503,29 @@ export function applyGravity(board: Board, palette: BlockId[], rng: Rng): Board 
       }
     }
     for (let r = write; r >= 0; r--) {
-      next[r]![c] = makeTile(rng.pick(palette))
+      next[r]![c] = makeTile(rng.pick(safePalette(next, r, c, palette)))
     }
   }
   return next
+}
+
+/** Les blocs posables en (row, col) sans creer d'alignement immediat. */
+function safePalette(board: Board, row: number, col: number, palette: BlockId[]): BlockId[] {
+  const forbidden = new Set<BlockId>()
+  const pairs: [Cell, Cell][] = [
+    [at(board, row + 1, col), at(board, row + 2, col)],
+    [at(board, row, col - 1), at(board, row, col - 2)],
+    [at(board, row, col + 1), at(board, row, col + 2)],
+    [at(board, row, col - 1), at(board, row, col + 1)],
+  ]
+  for (const [a, b] of pairs) {
+    if (isMatchable(a) && isMatchable(b) && a.block === b.block) forbidden.add(a.block)
+  }
+
+  const safe = palette.filter((block) => !forbidden.has(block))
+  // Sur une palette tres courte, tout peut etre interdit : mieux vaut une
+  // tuile qui s'aligne qu'un trou dans le plateau.
+  return safe.length > 0 ? safe : palette
 }
 
 /** Rebrasse le plateau quand plus aucun coup n'est possible. */

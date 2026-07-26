@@ -66,8 +66,19 @@ export interface Level {
   title: string
   /** La mission confiee au joueur, en une phrase. */
   brief: string
-  /** Les blocs presents sur le plateau. C'est lui qui pilote la difficulte. */
+  /**
+   * Les blocs qui composent le prompt a construire : ceux qui ont une jauge,
+   * un objectif et une carte de choix. C'est la structure enseignee au niveau.
+   */
   blocks: BlockId[]
+  /**
+   * Les bonbons presents sur le plateau. Volontairement distinct de `blocks` :
+   * un plateau a moins de cinq types degenere, car chaque etape de cascade y
+   * efface la moitie de la grille et un seul coup suffit a vider le niveau.
+   * Les bonbons hors objectif restent utiles — ils rapportent des points et
+   * declenchent les cascades. Par defaut, les sept blocs.
+   */
+  palette?: BlockId[]
   /** Budget de coups, presente au joueur comme un budget de tokens. */
   moves: number
   /** Fragments a recolter par bloc pour completer le prompt. */

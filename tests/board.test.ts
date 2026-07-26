@@ -128,6 +128,21 @@ test('le Flou reste sur la case et se dissipe quand on detruit dessus', () => {
   assert.equal(out.flou[3]![3], 1, 'le Flou loin du match ne bouge pas')
 })
 
+test('une case floue ne rapporte aucun fragment tant que le voile tient', () => {
+  const board = boardOf(['RRRC', 'CDCD', 'DCDC', 'CDCD'])
+  const flou = emptyFlou(board)
+  flou[0]![0] = 1
+  flou[0]![1] = 1
+
+  const out = clearMatches(board, flou, findMatches(board))
+  assert.equal(out.collected.role, 1, 'seule la case non voilee des trois rapporte')
+  assert.equal(out.flouCleared, 2, 'les deux voiles se sont bien leves')
+
+  // Une fois le voile leve, la meme case redevient productive.
+  const again = clearMatches(board, out.flou, findMatches(board))
+  assert.equal(again.collected.role, 3)
+})
+
 test('le Flou ne suit pas les tuiles qui tombent', () => {
   const board = boardOf(['RRRC', 'CDCD', 'DCDC', 'CDCD'])
   const flou = emptyFlou(board)

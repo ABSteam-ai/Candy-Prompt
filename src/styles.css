@@ -1,0 +1,811 @@
+/*
+ * Feuille de style de Candy Prompt.
+ *
+ * Tout est prefixe `cp-` et toutes les variables sont portees par `.cp-root`.
+ * Le module peut donc etre depose dans l'application La Quete de l'IA sans
+ * risque de collision avec ses styles, et sans rien lui imposer.
+ */
+
+.cp-root {
+  --cp-bg: #141033;
+  --cp-bg-deep: #0d0a24;
+  --cp-panel: #221a4d;
+  --cp-panel-soft: #2c2360;
+  --cp-line: #3b3080;
+  --cp-text: #f3f0ff;
+  --cp-text-dim: #a79fd6;
+  --cp-accent: #ffd166;
+  --cp-good: #6ee7a0;
+  --cp-bad: #ff7a8a;
+  --cp-radius: 16px;
+  --cp-cols: 8;
+  --cp-rows: 8;
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 12px;
+  gap: 12px;
+  background: radial-gradient(circle at 50% 0%, #241a56 0%, var(--cp-bg) 45%, var(--cp-bg-deep) 100%);
+  color: var(--cp-text);
+  font-family: ui-rounded, 'Segoe UI Rounded', 'Nunito', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cp-root *,
+.cp-root *::before,
+.cp-root *::after {
+  box-sizing: inherit;
+}
+
+.cp-root h1,
+.cp-root h2,
+.cp-root h3 {
+  margin: 0;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.cp-root p {
+  margin: 0;
+}
+
+.cp-root button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ boutons */
+.cp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #ffdf8a, var(--cp-accent));
+  color: #2a1d00;
+  box-shadow: 0 4px 0 #c69a2c;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.cp-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #c69a2c;
+}
+
+.cp-btn--ghost {
+  background: transparent;
+  color: var(--cp-text-dim);
+  box-shadow: inset 0 0 0 2px var(--cp-line);
+}
+
+.cp-btn--ghost:active {
+  transform: none;
+  box-shadow: inset 0 0 0 2px var(--cp-line);
+}
+
+.cp-btn--block {
+  width: 100%;
+}
+
+.cp-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------- entete */
+.cp-hud {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-hud__title {
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.cp-hud__sub {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cp-text-dim);
+}
+
+.cp-stat {
+  min-width: 74px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--cp-panel);
+  text-align: center;
+}
+
+.cp-stat__label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cp-text-dim);
+}
+
+.cp-stat__value {
+  display: block;
+  font-size: 19px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-stat--alert .cp-stat__value {
+  color: var(--cp-bad);
+}
+
+/* ------------------------------------------------------------------ plateau */
+.cp-boardwrap {
+  position: relative;
+}
+
+.cp-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--cp-cols) / var(--cp-rows);
+  padding: 6px;
+  border-radius: var(--cp-radius);
+  background: linear-gradient(180deg, #1b1442, #191039);
+  box-shadow: inset 0 0 0 2px var(--cp-line), 0 12px 30px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  /*
+   * Le plateau doit garder la main sur le geste de glissement.
+   * Sans ces trois lignes, le navigateur prend le dessus : il demarre un
+   * defilement ou une selection de texte sur l'emoji de la tuile, emet un
+   * `pointercancel`, et le coup du joueur est perdu en silence.
+   */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cp-board__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Le voile du Flou est pose sur la case, sous les bonbons. */
+.cp-veil {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% / var(--cp-cols));
+  height: calc(100% / var(--cp-rows));
+  transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%));
+  padding: 2px;
+}
+
+.cp-veil__inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(190, 205, 255, 0.28) 0 5px,
+    rgba(120, 140, 220, 0.16) 5px 10px
+  );
+  box-shadow: inset 0 0 0 2px rgba(200, 215, 255, 0.35);
+}
+
+.cp-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% / var(--cp-cols));
+  height: calc(100% / var(--cp-rows));
+  transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%));
+  padding: 3px;
+  transition: transform 260ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  touch-action: none;
+  -webkit-user-drag: none;
+}
+
+.cp-tile * {
+  pointer-events: none;
+}
+
+.cp-tile__face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(165deg, var(--tile-color) 0%, var(--tile-color) 52%, var(--tile-shade) 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 140ms ease, box-shadow 140ms ease, opacity 190ms ease;
+}
+
+.cp-tile__icon {
+  font-size: clamp(15px, 5.2vw, 24px);
+  line-height: 1;
+}
+
+.cp-tile__label {
+  /* Le libelle doit tenir dans la tuile sans jamais deborder : sur un
+     plateau 8x8 en portrait, une case fait une quarantaine de pixels. */
+  max-width: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: clamp(5px, 1.75vw, 8px);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: rgba(28, 16, 0, 0.78);
+}
+
+.cp-tile--selected .cp-tile__face {
+  transform: scale(1.12);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 0 0 3px #fff, 0 0 16px rgba(255, 255, 255, 0.5);
+}
+
+.cp-tile--vanishing .cp-tile__face {
+  transform: scale(0.25) rotate(14deg);
+  opacity: 0;
+}
+
+.cp-tile--dead .cp-tile__face {
+  background: repeating-linear-gradient(135deg, #4a4a5c 0 6px, #3a3a49 6px 12px);
+  box-shadow: inset 0 0 0 2px #5d5d73;
+}
+
+.cp-tile--dead .cp-tile__label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* Tuiles speciales : un halo qui les distingue au premier coup d'oeil. */
+.cp-tile--special .cp-tile__face {
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 0 0 2px #fff8dc, 0 0 14px rgba(255, 220, 120, 0.75);
+}
+
+.cp-tile__badge {
+  position: absolute;
+  inset: auto 2px 2px auto;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------- toasts */
+.cp-toasts {
+  position: absolute;
+  inset: 12px 0 auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.cp-toast {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(10, 6, 30, 0.85);
+  font-size: 13px;
+  font-weight: 800;
+  animation: cp-rise 1.4s ease forwards;
+}
+
+.cp-toast--bonus {
+  color: var(--cp-accent);
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.5);
+}
+
+@keyframes cp-rise {
+  0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-14px); }
+}
+
+/* ------------------------------------------------- panneau de construction */
+.cp-panel {
+  padding: 10px 12px;
+  border-radius: var(--cp-radius);
+  background: var(--cp-panel);
+  box-shadow: inset 0 0 0 1px var(--cp-line);
+}
+
+.cp-panel__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cp-text-dim);
+}
+
+.cp-gauges {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cp-gauge {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-gauge__icon {
+  font-size: 15px;
+  text-align: center;
+}
+
+.cp-gauge__track {
+  position: relative;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.cp-gauge__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--tile-shade), var(--tile-color));
+  transition: width 320ms ease;
+}
+
+.cp-gauge__name {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.cp-gauge__count {
+  min-width: 42px;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--cp-text-dim);
+}
+
+.cp-gauge--done .cp-gauge__count {
+  color: var(--cp-good);
+}
+
+/* --------------------------------------------------------------- panneaux */
+.cp-screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+}
+
+.cp-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--cp-panel);
+  box-shadow: inset 0 0 0 1px var(--cp-line), 0 14px 34px rgba(0, 0, 0, 0.35);
+}
+
+.cp-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--cp-accent);
+}
+
+.cp-lead {
+  margin-top: 10px;
+  color: var(--cp-text-dim);
+}
+
+.cp-brief {
+  margin-top: 14px;
+  padding: 14px;
+  border-left: 3px solid var(--cp-accent);
+  border-radius: 0 12px 12px 0;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 15px;
+}
+
+/* ------------------------------------------------------------- carte choix */
+.cp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(8, 5, 22, 0.78);
+  animation: cp-fade 180ms ease;
+}
+
+@keyframes cp-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cp-modal__box {
+  width: 100%;
+  max-width: 532px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, var(--cp-panel-soft), var(--cp-panel));
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  animation: cp-slide 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cp-slide {
+  from { transform: translateY(28px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.cp-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.cp-option {
+  width: 100%;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.26);
+  box-shadow: inset 0 0 0 1px var(--cp-line);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: box-shadow 140ms ease, transform 140ms ease;
+}
+
+.cp-option:active {
+  transform: scale(0.985);
+}
+
+.cp-option--picked {
+  box-shadow: inset 0 0 0 2px var(--cp-text);
+}
+
+.cp-option--right {
+  background: rgba(110, 231, 160, 0.15);
+  box-shadow: inset 0 0 0 2px var(--cp-good);
+}
+
+.cp-option--wrong {
+  background: rgba(255, 122, 138, 0.14);
+  box-shadow: inset 0 0 0 2px var(--cp-bad);
+}
+
+.cp-option--muted {
+  opacity: 0.45;
+}
+
+.cp-verdict {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 14px;
+}
+
+.cp-verdict__head {
+  margin-bottom: 5px;
+  font-weight: 800;
+}
+
+.cp-verdict--right .cp-verdict__head { color: var(--cp-good); }
+.cp-verdict--wrong .cp-verdict__head { color: var(--cp-bad); }
+
+/* ----------------------------------------------------------------- prompt */
+.cp-prompt {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.34);
+  box-shadow: inset 0 0 0 1px var(--cp-line);
+}
+
+.cp-prompt__block + .cp-prompt__block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--cp-line);
+}
+
+.cp-prompt__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--tile-color, var(--cp-text-dim));
+}
+
+.cp-prompt__text {
+  margin-top: 4px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--cp-text);
+}
+
+.cp-prompt__quality {
+  margin-left: auto;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--cp-text-dim);
+}
+
+/* ------------------------------------------------------------------ bilan */
+.cp-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.cp-stars {
+  font-size: 26px;
+  letter-spacing: 3px;
+}
+
+.cp-clarity {
+  text-align: right;
+}
+
+.cp-clarity__value {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-clarity__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--cp-text-dim);
+}
+
+/* ------------------------------------------------------------------ carte */
+.cp-levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.cp-level {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--cp-panel);
+  box-shadow: inset 0 0 0 1px var(--cp-line);
+  text-align: left;
+  transition: transform 140ms ease;
+}
+
+.cp-level:active {
+  transform: scale(0.97);
+}
+
+.cp-level--locked {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.cp-level__num {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cp-accent);
+}
+
+.cp-level__title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.cp-level__stars {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--cp-accent);
+}
+
+.cp-actbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cp-text-dim);
+}
+
+.cp-actbar::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--cp-line);
+}
+
+/* --------------------------------------------------------------- grimoire */
+.cp-entry + .cp-entry {
+  margin-top: 10px;
+}
+
+.cp-entry__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cp-pre {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.34);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #e6e0ff;
+}
+
+.cp-blocks-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.cp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1.5px var(--tile-color);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------- boss / ordre */
+.cp-seq {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.cp-seq__slot {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.26);
+  box-shadow: inset 0 0 0 1px var(--cp-line);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cp-seq__rank {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cp-line);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.cp-seq__slot--right { box-shadow: inset 0 0 0 2px var(--cp-good); }
+.cp-seq__slot--wrong { box-shadow: inset 0 0 0 2px var(--cp-bad); }
+
+.cp-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.cp-subject {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.36);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: #ddd6ff;
+}
+
+.cp-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.cp-footer .cp-btn {
+  /* `min-width: 0` est indispensable : sans lui, un bouton en pleine largeur
+     place dans un conteneur flex deborde du cadre au lieu de se retrecir. */
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.cp-muted {
+  color: var(--cp-text-dim);
+  font-size: 13px;
+}
+
+.cp-center {
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-root *,
+  .cp-root *::before,
+  .cp-root *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
