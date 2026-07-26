@@ -47,10 +47,20 @@ const html = `<title>Candy Prompt — apprendre à prompter en jouant</title>
   color-scheme: dark;
 }
 
+/*
+ * La page hote doit avoir une hauteur definie, sinon le `min-height: 100%` de
+ * la racine du jeu ne s'applique pas et la partie reste collee en haut, avec
+ * du vide en dessous sur un grand ecran.
+ */
+html,
 body {
   margin: 0;
-  min-height: 100dvh;
+  height: 100%;
   background: #0d0a24;
+}
+
+body {
+  display: grid;
 }
 
 ${safe(css)}

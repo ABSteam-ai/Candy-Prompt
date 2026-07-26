@@ -25,10 +25,16 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  margin: 0 auto;
-  max-width: 560px;
   padding: 12px;
   gap: 12px;
+  /*
+   * La racine est le conteneur de reference des requetes de conteneur.
+   * Elle n'impose plus de largeur maximale : c'est chaque ecran qui se
+   * contraint, ce qui laisse la partie s'etaler sur un grand ecran pendant que
+   * les menus restent d'une largeur lisible.
+   */
+  container-type: inline-size;
+  container-name: cp-jeu;
   background: radial-gradient(circle at 50% 0%, #241a56 0%, var(--cp-bg) 45%, var(--cp-bg-deep) 100%);
   color: var(--cp-text);
   font-family: ui-rounded, 'Segoe UI Rounded', 'Nunito', system-ui, -apple-system, sans-serif;
@@ -155,9 +161,113 @@
   color: var(--cp-bad);
 }
 
+/* ------------------------------------------------------- mise en page partie */
+/*
+ * La partie tient dans une grille nommee. Le meme balisage sert aux deux
+ * mises en page : seules les zones changent de place.
+ *
+ * Le basculement s'appuie sur une requete de CONTENEUR et non de fenetre.
+ * C'est le point important pour un module encastrable : le jeu peut se
+ * retrouver dans une colonne etroite d'un ecran large, et doit alors adopter
+ * la disposition etroite. Une media query, elle, ne verrait que la fenetre et
+ * se tromperait.
+ */
+.cp-play {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-areas:
+    'hud'
+    'board'
+    'aside';
+  grid-template-rows: auto auto 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.cp-play__hud {
+  grid-area: hud;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-play__board {
+  grid-area: board;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.cp-play__aside {
+  grid-area: aside;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Le brief et le score, sur une ligne sous le plateau. */
+.cp-brieflet {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-brieflet__text {
+  font-size: 12.5px;
+  color: var(--cp-text-dim);
+}
+
+@container cp-jeu (min-width: 860px) {
+  .cp-play {
+    grid-template-areas:
+      'hud   hud'
+      'board aside';
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 32%, 380px);
+    grid-template-rows: auto minmax(0, 1fr);
+    max-width: 1180px;
+    gap: 18px;
+  }
+
+  /*
+   * En large, la colonne laterale absorbe le brief et les jauges : il ne reste
+   * que l'en-tete au-dessus du plateau, qui peut donc monter plus haut.
+   */
+  .cp-boardwrap {
+    --cp-board-max: calc(100dvh - 150px);
+  }
+
+  /* En large, le brief se lit en colonne plutot qu'en bandeau. */
+  .cp-brieflet {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 12px;
+  }
+
+  .cp-brieflet__text {
+    font-size: 14px;
+  }
+}
+
 /* ------------------------------------------------------------------ plateau */
 .cp-boardwrap {
   position: relative;
+  /*
+   * Le plateau est carre et doit tenir dans la place disponible sans jamais
+   * imposer de defilement — ni en largeur, ni en hauteur.
+   *
+   * `--cp-board-max` est la hauteur que le plateau s'autorise. Un hote qui
+   * encastre le module dans une boite de hauteur connue peut la redefinir
+   * pour un ajustement exact.
+   */
+  --cp-board-max: calc(100dvh - 260px);
+  width: min(100%, max(240px, var(--cp-board-max)));
 }
 
 .cp-board {
@@ -438,6 +548,10 @@
   flex-direction: column;
   gap: 14px;
   justify-content: center;
+  /* Les menus se lisent, ils ne se jouent pas : on les garde etroits. */
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
 }
 
 .cp-card {

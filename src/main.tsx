@@ -15,10 +15,13 @@ import { BOSS_LEVELS } from './data/boss'
 const container = document.getElementById('root')
 if (!container) throw new Error('Element #root introuvable')
 
-// Le harnais pose le fond sur la page entiere ; le module, lui, n'impose rien.
-document.body.style.margin = '0'
-document.body.style.minHeight = '100dvh'
-document.body.style.background = '#0d0a24'
+// Le harnais pose le fond et la hauteur sur la page entiere ; le module, lui,
+// n'impose rien. Sans hauteur definie sur l'ancetre, le `min-height: 100%` de
+// la racine ne s'applique pas et le jeu reste colle en haut de l'ecran.
+const page = document.documentElement
+page.style.height = '100%'
+document.body.style.cssText =
+  'margin:0;height:100%;display:grid;background:#0d0a24;'
 
 // Accroches de test : les scripts de verification lisent l'etat du jeu et le
 // contenu ici. Elles n'existent que dans le harnais, jamais dans le module
