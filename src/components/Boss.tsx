@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { BLOCK_BY_ID } from '../game/blocks'
+import { stableOrder } from '../game/shuffle'
 import type { BossLevel } from '../data/boss'
 import type { BlockId } from '../game/types'
 import { useGame } from '../store/gameStore'
@@ -44,13 +45,17 @@ interface QuizProps {
 function ExerciceQuiz({ boss, onDone }: QuizProps) {
   const [picked, setPicked] = useState<number | null>(null)
   const answer = picked === null ? null : boss.options[picked]
+  // Sans melange, la bonne reponse serait toujours en tete du fichier de
+  // contenu, et le joueur apprendrait a cliquer sans lire.
+  const order = useMemo(() => stableOrder(boss.options.length, `boss:${boss.id}`), [boss])
 
   return (
     <>
       <pre className="cp-subject">{boss.subject}</pre>
 
       <div className="cp-choice">
-        {boss.options.map((option, index) => {
+        {order.map((index) => {
+          const option = boss.options[index]!
           const classes = ['cp-option']
           if (answer) {
             if (option.correct) classes.push('cp-option--right')

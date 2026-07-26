@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 
 import { CandyPrompt } from './CandyPrompt'
 import { useGame } from './store/gameStore'
+import { LEVELS } from './data/levels'
+import { BOSS_LEVELS } from './data/boss'
 
 /**
  * Harnais de developpement.
@@ -18,9 +20,13 @@ document.body.style.margin = '0'
 document.body.style.minHeight = '100dvh'
 document.body.style.background = '#0d0a24'
 
-// Accroche de test : le script de partie automatisee lit l'etat du jeu ici.
-// Elle n'existe que dans le harnais, jamais dans le module exporte.
-;(globalThis as unknown as { __candyPrompt?: unknown }).__candyPrompt = useGame
+// Accroches de test : les scripts de verification lisent l'etat du jeu et le
+// contenu ici. Elles n'existent que dans le harnais, jamais dans le module
+// exporte par `src/index.ts`.
+Object.assign(globalThis, {
+  __candyPrompt: useGame,
+  __candyPromptData: { LEVELS, BOSS_LEVELS },
+})
 
 createRoot(container).render(
   <StrictMode>

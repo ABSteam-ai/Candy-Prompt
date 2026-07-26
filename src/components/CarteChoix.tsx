@@ -1,28 +1,8 @@
 import { useMemo } from 'react'
 
 import { BLOCK_BY_ID } from '../game/blocks'
-import type { ChoiceCard } from '../game/types'
+import { stableOrder } from '../game/shuffle'
 import { useGame } from '../store/gameStore'
-
-/**
- * Melange stable des options.
- *
- * Le fichier source range toujours les options dans l'ordre excellent / moyen
- * / faible, pour qu'on puisse le relire. Il faut donc les melanger a
- * l'affichage — mais de facon deterministe, sinon les options sautent d'une
- * position a l'autre a chaque rendu de React.
- */
-function shuffledOrder(card: ChoiceCard): number[] {
-  let hash = card.levelId * 31
-  for (const ch of card.block) hash = (hash * 33 + ch.charCodeAt(0)) >>> 0
-  const order = [0, 1, 2]
-  for (let i = order.length - 1; i > 0; i--) {
-    hash = (hash * 1103515245 + 12345) >>> 0
-    const j = hash % (i + 1)
-    ;[order[i], order[j]] = [order[j]!, order[i]!]
-  }
-  return order
-}
 
 export function CarteChoix() {
   const card = useGame((s) => s.activeCard)
@@ -30,7 +10,10 @@ export function CarteChoix() {
   const answerCard = useGame((s) => s.answerCard)
   const dismissCard = useGame((s) => s.dismissCard)
 
-  const order = useMemo(() => (card ? shuffledOrder(card) : []), [card])
+  const order = useMemo(
+    () => (card ? stableOrder(card.options.length, `${card.levelId}:${card.block}`) : []),
+    [card],
+  )
   if (!card) return null
 
   const def = BLOCK_BY_ID[card.block]

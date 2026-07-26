@@ -5,6 +5,7 @@ import { LEVELS } from '../src/data/levels.ts'
 import { CHOICE_CARDS, cardFor } from '../src/data/choices.ts'
 import { BOSS_LEVELS } from '../src/data/boss.ts'
 import { BLOCK_BY_ID } from '../src/game/blocks.ts'
+import { stableOrder } from '../src/game/shuffle.ts'
 import type { BlockId } from '../src/game/types.ts'
 
 test('chaque bloc de chaque niveau a sa carte de choix', () => {
@@ -99,6 +100,27 @@ test('chaque niveau boss est rattache a un niveau existant et a une bonne repons
       assert.equal(correct.length, 1, `boss ${boss.id} : il faut exactement une bonne reponse`)
     }
   }
+})
+
+test("le melange d'affichage ne laisse pas la bonne reponse toujours en tete", () => {
+  // Le contenu source place toujours la bonne option en premier. Si le
+  // melange la laissait en tete, le joueur apprendrait a cliquer sans lire.
+  const positions = CHOICE_CARDS.map((card) => {
+    const order = stableOrder(card.options.length, `${card.levelId}:${card.block}`)
+    return order.indexOf(0)
+  })
+  const first = positions.filter((p) => p === 0).length
+  assert.equal(
+    first < CHOICE_CARDS.length,
+    true,
+    'la bonne option occupe la premiere place sur toutes les cartes',
+  )
+  // Sur 38 cartes, une repartition saine met environ un tiers a chaque place.
+  assert.equal(first / CHOICE_CARDS.length < 0.6, true, `bonne option en tete sur ${first} cartes`)
+
+  // Et le melange doit rester stable d'un appel a l'autre.
+  const twice = stableOrder(3, '1:role')
+  assert.deepEqual(twice, stableOrder(3, '1:role'))
 })
 
 test('les 7 blocs ont tous une couleur distincte', () => {
