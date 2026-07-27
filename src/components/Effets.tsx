@@ -65,6 +65,13 @@ function EffetUn({ effect }: { effect: Effect }) {
     case 'voile':
       return <div className="cp-effet cp-effet--voile" style={style} />
 
+    case 'nom':
+      return (
+        <div className="cp-effet cp-effet--nom" style={style}>
+          <span className="cp-effet__nom">{effect.value}</span>
+        </div>
+      )
+
     case 'score':
       return (
         <div className="cp-effet cp-effet--score" style={style}>

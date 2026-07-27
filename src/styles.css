@@ -707,10 +707,42 @@
   to { transform: scale(1.5); opacity: 0; }
 }
 
+/* --- le nom du bloc, annonce a l'explosion --- */
+/*
+ * C'est le seul endroit ou le joueur lit le nom d'un bloc en jouant. Il passe
+ * donc avant le score dans la hierarchie : plus gros, dans la couleur du
+ * bloc, et cerne de noir pour rester lisible par-dessus n'importe quel
+ * bonbon. Le score, lui, part plus bas et un peu plus tard pour ne pas
+ * marcher dessus.
+ */
+.cp-effet--nom {
+  z-index: 4;
+  animation: cp-nom 1150ms cubic-bezier(0.16, 0.9, 0.3, 1) both;
+}
+
+.cp-effet__nom {
+  font-size: clamp(11px, 3.6cqw, 21px);
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  white-space: nowrap;
+  color: var(--eclat);
+  paint-order: stroke;
+  -webkit-text-stroke: 4px rgba(9, 5, 24, 0.88);
+  text-shadow: 0 0 12px var(--teinte), 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+@keyframes cp-nom {
+  0% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)) scale(0.55); opacity: 0; }
+  14% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 14%)) scale(1.24); opacity: 1; }
+  26% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 22%)) scale(1); opacity: 1; }
+  72% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 78%)) scale(1); opacity: 1; }
+  100% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 130%)) scale(0.96); opacity: 0; }
+}
+
 /* --- le score qui monte --- */
 .cp-effet--score {
   z-index: 2;
-  font-size: clamp(13px, 3.4cqw, 22px);
+  font-size: clamp(11px, 2.7cqw, 17px);
   font-weight: 900;
   color: #fff;
   white-space: nowrap;
@@ -719,10 +751,10 @@
 }
 
 @keyframes cp-montee {
-  0% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)) scale(0.6); opacity: 0; }
-  12% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 10%)) scale(1.22); opacity: 1; }
+  0% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% + 26%)) scale(0.6); opacity: 0; }
+  16% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% + 20%)) scale(1.18); opacity: 1; }
   70% { opacity: 1; }
-  100% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 135%)) scale(0.95); opacity: 0; }
+  100% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100% - 46%)) scale(0.95); opacity: 0; }
 }
 
 /* --- l'annonce de cascade --- */
@@ -1309,4 +1341,20 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+
+  /*
+   * Une exception, et une seule. Le nom du bloc n'est pas de la decoration :
+   * c'est le contenu pedagogique du jeu. Le reduire a 0,01 ms le ferait
+   * disparaitre avant d'avoir ete lu. On lui garde donc sa duree, en
+   * supprimant le deplacement : il apparait sur place et s'efface.
+   */
+  .cp-effet--nom {
+    animation: cp-nom-sobre 1150ms ease-out both !important;
+  }
+}
+
+@keyframes cp-nom-sobre {
+  0% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)); opacity: 0; }
+  10%, 74% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)); opacity: 1; }
+  100% { transform: translate(calc(var(--c) * 100%), calc(var(--r) * 100%)); opacity: 0; }
 }

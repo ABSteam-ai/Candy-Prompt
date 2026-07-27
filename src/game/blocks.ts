@@ -79,7 +79,7 @@ export const BLOCKS: BlockDef[] = [
   {
     id: 'raisonnement',
     label: 'Le Raisonnement',
-    short: 'Raison.',
+    short: 'Raisonnement',
     icon: '🧠',
     silhouette: 'trilobe',
     color: '#b58cff',

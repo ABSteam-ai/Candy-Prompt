@@ -16,7 +16,7 @@ import {
   at,
 } from '../game/board'
 import { createRng, type Rng } from '../game/rng'
-import { BLOCK_ORDER } from '../game/blocks'
+import { BLOCK_BY_ID, BLOCK_ORDER } from '../game/blocks'
 import type {
   Board,
   BlockId,
@@ -69,7 +69,7 @@ export interface Toast {
  */
 export interface Effect {
   id: number
-  kind: 'eclat' | 'score' | 'chaine' | 'voile'
+  kind: 'eclat' | 'nom' | 'score' | 'chaine' | 'voile'
   row: number
   col: number
   block?: BlockId
@@ -79,6 +79,12 @@ export interface Effect {
 
 /** Duree de vie d'un effet, au-dela de laquelle le store l'oublie. */
 const EFFECT_TTL = 1100
+
+/**
+ * Marge, en cases, que l'etiquette de nom garde par rapport aux bords du
+ * plateau. Calee sur le mot le plus long du jeu, « RAISONNEMENT ».
+ */
+const MARGE_NOM = 1.4
 
 /**
  * Delai d'inactivite avant de suggerer un coup.
@@ -263,7 +269,40 @@ export const useGame = create<GameState>((set, get) => {
       // que le bonbon a disparu ne se rattache visuellement a rien.
       const veilesLevees = out.cleared.filter((p) => (flou[p.row]?.[p.col] ?? 0) > 0)
       const centre = out.cleared[Math.floor(out.cleared.length / 2)]
+
+      /*
+       * Le nom du bloc, annonce a chaque alignement.
+       *
+       * C'est le seul endroit ou le joueur lit « RÔLE » ou « CONTEXTE » en
+       * jouant : la tuile ne porte plus de libelle, et l'instant de
+       * l'explosion est celui ou son regard est deja sur la case. Un nom par
+       * alignement, pas un par bonbon — trois etiquettes empilees sur trois
+       * cases voisines seraient illisibles.
+       *
+       * Le centre est le barycentre de l'alignement, en coordonnees
+       * fractionnaires : sur un alignement de quatre, l'etiquette tombe entre
+       * deux cases plutot que sur l'une d'elles.
+       */
+      const colonnes = board[0]?.length ?? 8
+      const noms = matches.map((match) => {
+        const n = match.positions.length
+        const col = match.positions.reduce((sum, p) => sum + p.col, 0) / n
+        return {
+          kind: 'nom' as const,
+          row: match.positions.reduce((sum, p) => sum + p.row, 0) / n,
+          // Le mot est plus large qu'une case : centre sur un alignement de
+          // bord, il sortirait du plateau et se ferait couper. On le ramene
+          // juste assez pour qu'il tienne entier, en gardant sa ligne exacte —
+          // c'est la hauteur qui rattache l'etiquette a l'explosion, pas la
+          // colonne au pixel pres.
+          col: Math.min(Math.max(col, MARGE_NOM), colonnes - 1 - MARGE_NOM),
+          block: match.block,
+          value: BLOCK_BY_ID[match.block].short.toUpperCase(),
+        }
+      })
+
       emit([
+        ...noms,
         ...out.cleared.map((p) => ({
           kind: 'eclat' as const,
           row: p.row,
